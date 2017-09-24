@@ -4,7 +4,13 @@
 from Entries import Entries
 
 print "Main ran ..."
+
+debug = 0
+
 lastYear = Entries()
-lastYear.printValues()
+#lastYear.printValues()
+if debug == 1:
+	#lastYear.loadDebugValues()
 lastYear.writeOutputHTML()
-lastYear.writeGPchart()
+lastYear.getEntriesFor("liquidation", "August")
+#lastYear.writeGPchart()
