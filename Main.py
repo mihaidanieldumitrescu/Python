@@ -10,7 +10,7 @@ debug = 0
 lastYear = Entries()
 #lastYear.printValues()
 if debug == 1:
-	#lastYear.loadDebugValues()
+	lastYear.loadDebugValues()
 lastYear.writeOutputHTML()
 lastYear.getEntriesFor("liquidation", "August")
 #lastYear.writeGPchart()
