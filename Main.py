@@ -12,5 +12,10 @@ lastYear = Entries()
 if debug == 1:
 	lastYear.loadDebugValues()
 lastYear.writeOutputHTML()
-lastYear.getEntriesFor("liquidation", "August")
+
+months  = [ "August", "September", "November", "December" ]
+period  = ["liquidation", "advance" ]
+for month in months:
+	for per in period:
+		lastYear.getEntriesFor( per, month)
 #lastYear.writeGPchart()
