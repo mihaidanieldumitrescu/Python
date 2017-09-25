@@ -3,8 +3,8 @@ from Entries import Entries
 from EntryNew import EntryNew
 
 
-	def __init__:
-		pass
+	def __init__(self, entry):
+		currentYear = entry
 
 	def writeOutputHTML(self):
 		output = open ( "budgetStatistics.html", "w")
