@@ -60,36 +60,6 @@ class Entries(EntryNew):
                     self.newEntry ( EntryNew( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]))
                     
             file.close()
-            
-    def writeOutputHTML(self):
-        output = open ( "budgetStatistics.html", "w")
-        current = EntryNew()
-        table = self.htmlOutput.table()
-        for entry in self.currentYear:
-            row = table.tr
-            if current.period != entry.period:
-                current.period = entry.period
-                row.td( entry.period )
-            else:
-                row.td()
-                
-            if current.month != entry.month:
-                current.month = entry.month
-                row.td( entry.month )
-            else:
-                row.td()
-                
-            if current.year != entry.year:
-                current.year = entry.year
-                row.td( entry.year )
-            else:
-                row.td()
-            row.td( entry.description )
-            row.td( entry.value )
-            row.td( entry.label )
-
-        output.write ( str (self.htmlOutput ) )
-        output.close
         
     def writeGPchart(self):
         self.fig.column(['Aug-av','Aug-li','Sept-av','Sept-li'],['Suma',1303,440,600,200],['test',1])
