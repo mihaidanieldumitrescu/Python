@@ -1,7 +1,4 @@
-#!/usr/bin/env python
-
-
-
+#!/usr/bin/python
 
 class EntryNew:
     def __init__(self,period="undef", month=-1, year=-1, description="undef", value=-1, label="undef"):
