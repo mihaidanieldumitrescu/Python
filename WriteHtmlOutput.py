@@ -2,15 +2,19 @@ from html import HTML
 from Entries import Entries
 from EntryNew import EntryNew
 
+class WriteHtmlOutput:
 
 	def __init__(self, entry):
-		currentYear = entry
+	        self.htmlOutput = HTML()
+		self.printMe = entry
+		self.writeOutput()
+		pprint (self.printMe)
 
-	def writeOutputHTML(self):
+	def writeOutput(self):
 		output = open ( "budgetStatistics.html", "w")
-		current = EntryNew()
+       		current = EntryNew()
 		table = self.htmlOutput.table()
-		for entry in self.currentYear:
+		for entry in self.printMe:
 		    row = table.tr
 		    if current.period != entry.period:
 		        current.period = entry.period
