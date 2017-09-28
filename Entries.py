@@ -18,6 +18,9 @@ class Entries(EntryNew):
         self.currentYear = []
         self.dictCurrentYear = {}
         self.loadEntriesSCV()
+
+    def retReference(self):
+	return self.currentYear
         
     def printValues(self):
         for entry in self.currentYear:
