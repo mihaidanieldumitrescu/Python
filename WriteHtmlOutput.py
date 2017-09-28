@@ -1,20 +1,22 @@
 from html import HTML
 from Entries import Entries
 from EntryNew import EntryNew
+from pprint import pprint
+
 
 class WriteHtmlOutput:
 
 	def __init__(self, entry):
 	        self.htmlOutput = HTML()
 		self.printMe = entry
+		pprint (self.printMe.retReference)
 		self.writeOutput()
-		pprint (self.printMe)
 
 	def writeOutput(self):
 		output = open ( "budgetStatistics.html", "w")
        		current = EntryNew()
 		table = self.htmlOutput.table()
-		for entry in self.printMe:
+		for entry in self.printMe.retReference():
 		    row = table.tr
 		    if current.period != entry.period:
 		        current.period = entry.period
