@@ -59,8 +59,9 @@ class Entries(EntryNew):
             for row in file:
                 elements = row.split(";")
                 if len(elements) == 6:
-                    elements[5] = elements[5].rstrip()
-                    self.newEntry ( EntryNew( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]))
+            		elements[5] = elements[5].rstrip()
+			elements[4] = elements[4].replace(",", ".")		
+   	        	self.newEntry ( EntryNew( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]))
                     
             file.close()
         
