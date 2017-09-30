@@ -19,6 +19,9 @@ class Entries(EntryNew):
         self.dictCurrentYear = {}
         self.loadEntriesSCV()
 
+    def __str__(self):
+        return "<str> method"
+
     def retReference(self):
 	return self.currentYear
         
@@ -26,21 +29,21 @@ class Entries(EntryNew):
         for entry in self.currentYear:
             entry.printEntryValues()
             
-    def printValuesDict(self):
-        pprint (self.dictCurrentYear)
+    def retValuesDict(self):
+	tempStr = ""
         for month in self.dictCurrentYear:
             for period in self.dictCurrentYear[month]:
                 for entry in self.dictCurrentYear[month][period]:
-                    entry.printEntryValues()
+                    termStr += str ( entry )
+	return termStr 
 
-    def getEntriesFor(self,period, month):
+    def getEntriesFor(self, period, month):
 
-        print "Looking for entries for month '" + month + "' and period '" + period + "' :\n"	
+        # print "Looking for entries for month '" + month + "' and period '" + period + "' :\n"	
         entriesFound = []
         for entry in self.currentYear:
             if entry.period == period and entry.month == month:
                 entriesFound.append(entry)
-                entry.printEntryValues()
         return entriesFound
     
     def newEntry(self, newEnt):
