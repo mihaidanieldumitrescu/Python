@@ -44,7 +44,7 @@ class WriteHtmlOutput:
 				if not hasEntries:
 					continue
 
-				headerRow.td(period, style="background-color: lightblue" )
+				headerRow.td(period, style="background-color: lightblue; text-align: center" )
 				headerRow = table.tr
 				secondRow = table.tr
 
@@ -53,7 +53,7 @@ class WriteHtmlOutput:
 					for time in range(tdBefore):
 						thirdRow.td() #empty div before input
 					thirdRow.td  ( entryNew.description)
-					thirdRow.td  ( entryNew.value + " lei" ) 
+					thirdRow.td  ( entryNew.value + " lei", style="text-align: right") 
  					self.totalSpentMonth[currMonth] +=  float (entryNew.value )
 					self.totalSpentCategory[entryNew.label] += float (entryNew.value )
 					
@@ -63,7 +63,7 @@ class WriteHtmlOutput:
 				headerRow.td()
 				headerRow.td()
 		finalRow = table.tr
-		finalRow.td()
+		finalRow.td( "Total:" , style="background-color:lightgrey")
 		for currMonth in monthsArr:
 			if self.totalSpentMonth[currMonth] != 0:
 				finalRow.td ( str ( self.totalSpentMonth[currMonth] ) + " lei")
