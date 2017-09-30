@@ -3,10 +3,10 @@
 class EntryNew:
     def __init__(self,period="undef", month=-1, year=-1, description="undef", value=-1, label="undef"):
         self.period = period
-        self.month = month
-        self.year = year
+        self.month = month 
+        self.year = year 
         self.description = description
-        self.value = value
+        self.value =  value 
         self.label = label
  
     
@@ -31,3 +31,6 @@ class EntryNew:
         
     def printEntryValues(self):
         print '{:8} {:4} {:20} {:8} {:8} {:8}'.format ( self.period,  self.month,  self.year, self.description, self.value, self.label )
+
+    def __str__(self):
+        return '{:8} {:4} {:20} {:8} {:8} {:8}'.format ( self.period,  self.month,  self.year, self.description, self.value, self.label )
