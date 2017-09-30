@@ -36,7 +36,8 @@ class WriteHtmlOutput:
 			entries = self.printMe.dictCurrentYear
 
 			headerRow = table.tr (style="border: none")
-			headerRow.td ( currMonth, style="background-color: lightblue" )			
+			headerRow.td ( currMonth, style="background-color: lightblue" )	
+			headerRow.td ()		
 			
 			for period in ["liquidation", "advance" ]:
 				hasEntries = len ( self.printMe.getEntriesFor( period, currMonth ))
@@ -44,6 +45,7 @@ class WriteHtmlOutput:
 					continue
 
 				headerRow.td(period, style="background-color: lightblue" )
+				headerRow = table.tr
 				secondRow = table.tr
 
 				for entryNew in self.printMe.getEntriesFor( period, currMonth ):
@@ -51,16 +53,22 @@ class WriteHtmlOutput:
 					for time in range(tdBefore):
 						thirdRow.td() #empty div before input
 					thirdRow.td  ( entryNew.description)
-					thirdRow.td  ( entryNew.value ) 
+					thirdRow.td  ( entryNew.value + " lei" ) 
  					self.totalSpentMonth[currMonth] +=  float (entryNew.value )
 					self.totalSpentCategory[entryNew.label] += float (entryNew.value )
 					
 				for time in range(tdAfter):
 					headerRow.td() #empty div after input
-				headerRow = table.tr ( style="background-color: lightblue")
+				headerRow = table.tr ()
 				headerRow.td()
+				headerRow.td()
+		finalRow = table.tr
+		finalRow.td()
+		for currMonth in monthsArr:
+			if self.totalSpentMonth[currMonth] != 0:
+				finalRow.td ( str ( self.totalSpentMonth[currMonth] ) + " lei")
 
-		self.buffer +=   str (self.htmlOutput ) 
+		self.buffer +=   str (self.htmlOutput )
 
 	def bufferHeader(self):
 		self.buffer += ""
