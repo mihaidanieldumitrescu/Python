@@ -1,6 +1,4 @@
 from EntryNew import EntryNew
-from gpcharts import figure
-
 
 from html import HTML
 from pprint import pprint
@@ -13,7 +11,7 @@ class Entries(EntryNew):
     def __init__(self):
 
          #another line graph, but with two data types. Also adding title
-        self.fig = figure(title='Cheltuieli', height=600, width=800)
+
         self.htmlOutput = HTML()
         self.currentYear = []
         self.dictCurrentYear = {}
@@ -54,8 +52,8 @@ class Entries(EntryNew):
         #sort elements by EntryNew.month
 
     def loadEntriesSCV(self):
-        if os.path.isfile("values.csv"):
-            file = open ("values.csv" , "r")
+        if os.path.isfile("statistici2016.csv"):
+            file = open ("statistici2016.csv" , "r")
             for row in file:
                 elements = row.split(";")
                 if len(elements) == 6:
@@ -64,9 +62,6 @@ class Entries(EntryNew):
    	        	self.newEntry ( EntryNew( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]))
                     
             file.close()
-        
-    def writeGPchart(self):
-        self.fig.column(['Aug-av','Aug-li','Sept-av','Sept-li'],['Suma',1303,440,600,200],['test',1])
         
     def loadDebugValues(self):
         if 0:

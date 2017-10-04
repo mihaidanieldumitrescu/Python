@@ -1,6 +1,8 @@
 from html import HTML
 from Entries import Entries
 from EntryNew import EntryNew
+
+from gpcharts import figure
 from pprint import pprint
 
 
@@ -8,7 +10,10 @@ class WriteHtmlOutput:
 
 	def __init__(self, entry):
 
-		self.buffer = ""	        
+		self.buffer = ""
+		self.monthsArr  = [ "August", "September", "October", "November", "December", "January" , "February" , "March" , "April", "May" , "June" , "July" ]	
+        	self.fig = figure(title='statistics categories', height=600, width=800)   
+        	self.fig2 = figure(title='statistics months', height=600, width=800)       
 		self.htmlOutput = HTML()
 		self.printMe = entry
 		self.totalSpentMonth = {}
@@ -17,12 +22,12 @@ class WriteHtmlOutput:
 			self.totalSpentCategory[entry.label] = 0
 		self.bufferMainTable()
 		self.writeOutput()
-		
+		self.writeGPchart()
+
 
 	def bufferMainTable(self):
-		monthsArr  = [ "August", "September", "October", "November", "December", "January" , "February" , "March" , "April", "May" , "June" , "July" ]
-		
 
+		monthsArr = self.monthsArr
 		table = self.htmlOutput.table()
 		index = 0
 
@@ -63,10 +68,10 @@ class WriteHtmlOutput:
 				headerRow.td()
 				headerRow.td()
 		finalRow = table.tr
-		finalRow.td( "Total:" , style="background-color:lightgrey")
+		finalRow.td( "Total:" , style="background-color:lightgrey; text-align: right")
 		for currMonth in monthsArr:
 			if self.totalSpentMonth[currMonth] != 0:
-				finalRow.td ( str ( self.totalSpentMonth[currMonth] ) + " lei")
+				finalRow.td ( str ( self.totalSpentMonth[currMonth] ) + " lei", style="background-color:lightgreen; text-align: right")
 
 		self.buffer +=   str (self.htmlOutput )
 
@@ -85,3 +90,20 @@ class WriteHtmlOutput:
 		pprint (self.totalSpentCategory )
 		print  "\nby Month\n\n"
 		pprint ( self.totalSpentMonth )
+
+	def writeGPchart(self):
+		catData = ['Categories']
+		valuesData = ['lei']
+		for cat in self.totalSpentCategory:
+        		catData.append(cat)
+			valuesData.append(self.totalSpentCategory[cat] * -1)
+		self.fig.column(catData,valuesData)
+		monthData = ['Months']
+		valuesData = ['lei']
+		for month in self.monthsArr:
+        		monthData.append(month)
+			valuesData.append(self.totalSpentMonth[month] * -1)
+
+				
+
+		self.fig2.column(monthData,valuesData)
