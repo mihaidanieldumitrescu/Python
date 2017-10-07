@@ -8,10 +8,10 @@ import re
 
 class Entries(EntryNew):
     
-    def __init__(self):
+    def __init__(self, inputFile):
 
          #another line graph, but with two data types. Also adding title
-
+	self.csvInputfile = inputFile			
         self.htmlOutput = HTML()
         self.currentYear = []
         self.dictCurrentYear = {}
@@ -52,8 +52,8 @@ class Entries(EntryNew):
         #sort elements by EntryNew.month
 
     def loadEntriesSCV(self):
-        if os.path.isfile("statistici2016.csv"):
-            file = open ("statistici2016.csv" , "r")
+        if os.path.isfile(self.csvInputfile):
+            file = open (self.csvInputfile , "r")
             for row in file:
                 elements = row.split(";")
                 if len(elements) == 6:
@@ -62,6 +62,8 @@ class Entries(EntryNew):
    	        	self.newEntry ( EntryNew( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]))
                     
             file.close()
+	else:
+		print "File '" + self.inputFile + "' was not found!\n"
         
     def loadDebugValues(self):
         if 0:

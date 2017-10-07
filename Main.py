@@ -8,7 +8,7 @@ print "Main ran ...\n"
 
 debug = 0
 
-lastYear = Entries()
+lastYear = Entries("statistici2016.csv")
 
 if debug == 1:
 	lastYear.loadDebugValues()

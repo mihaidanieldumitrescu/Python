@@ -9,11 +9,11 @@ from pprint import pprint
 class WriteHtmlOutput:
 
 	def __init__(self, entry):
-
+		self.inputFileName = entry.csvInputfile
 		self.buffer = ""
 		self.monthsArr  = [ "August", "September", "October", "November", "December", "January" , "February" , "March" , "April", "May" , "June" , "July" ]	
-        	self.fig = figure(title='statistics categories', height=600, width=800)   
-        	self.fig2 = figure(title='statistics months', height=600, width=800)       
+        	self.fig = figure(title=self.inputFileName + '_by_categories', height=600, width=800)   
+        	self.fig2 = figure(title=self.inputFileName + '_by_months', height=600, width=800)       
 		self.htmlOutput = HTML()
 		self.printMe = entry
 		self.totalSpentMonth = {}
@@ -83,7 +83,7 @@ class WriteHtmlOutput:
 
 	
 	def writeOutput(self):
-		output = open ( "budgetStatistics.html", "w")
+		output = open ( self.inputFileName + "_table_by_month.html", "w")
 		output.write ( self.buffer )
 		output.close
 		print  "by Category\n\n"
