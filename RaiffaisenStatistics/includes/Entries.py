@@ -11,7 +11,7 @@ class Entries(EntryNew):
     def __init__(self, inputFile):
 
          #another line graph, but with two data types. Also adding title
-	self.csvInputfile = inputFile			
+	self.csvInputfile = inputFile
         self.htmlOutput = HTML()
         self.currentYear = []
         self.dictCurrentYear = {}
@@ -63,7 +63,7 @@ class Entries(EntryNew):
                     
             file.close()
 	else:
-		print "File '" + self.inputFile + "' was not found!\n"
+		print "File '" + self.csvInputfile + "' was not found!\n"
         
     def loadDebugValues(self):
         if 0:
