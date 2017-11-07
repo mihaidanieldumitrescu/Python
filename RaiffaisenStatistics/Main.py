@@ -16,9 +16,15 @@ for f in files:
 	print "trying to open " + f 
 	book = xlrd.open_workbook( f )
 	sh = book.sheet_by_index(0)
-	print("{0} {1} {2}".format(sh.name, sh.nrows, sh.ncols))
 	for rx in range(sh.nrows):
-    		print(sh.row(rx))	
+		index = 0
+		for cell in sh.row(rx):
+			if ( str (cell).find("empty")) != -1:
+				next
+			print( str ( cell ) + " ")
+			index += 1
+		print "\n\n"
+	print "\n\n" 
 
 
 if debug == 1:
