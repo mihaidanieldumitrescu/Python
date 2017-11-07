@@ -11,7 +11,7 @@ class Entries(EntryNew):
     def __init__(self, inputFile):
 
          #another line graph, but with two data types. Also adding title
-	self.csvInputfile = inputFile
+        self.csvInputfile = inputFile
         self.htmlOutput = HTML()
         self.currentYear = []
         self.dictCurrentYear = {}
@@ -21,19 +21,19 @@ class Entries(EntryNew):
         return "<str> method"
 
     def retReference(self):
-	return self.currentYear
+        return self.currentYear
         
     def printValues(self):
         for entry in self.currentYear:
             entry.printEntryValues()
             
     def retValuesDict(self):
-	tempStr = ""
+        tempStr = ""
         for month in self.dictCurrentYear:
             for period in self.dictCurrentYear[month]:
                 for entry in self.dictCurrentYear[month][period]:
                     termStr += str ( entry )
-	return termStr 
+        return termStr 
 
     def getEntriesFor(self, period, month):
 
@@ -57,13 +57,13 @@ class Entries(EntryNew):
             for row in file:
                 elements = row.split(";")
                 if len(elements) == 6:
-            		elements[5] = elements[5].rstrip()
-			elements[4] = elements[4].replace(",", ".")		
-   	        	self.newEntry ( EntryNew( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]))
+                    elements[5] = elements[5].rstrip()
+                elements[4] = elements[4].replace(",", ".")		
+            self.newEntry ( EntryNew( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]))
                     
             file.close()
-	else:
-		print "File '" + self.csvInputfile + "' was not found!\n"
+        else:
+            print "File '" + self.csvInputfile + "' was not found!\n"
         
     def loadDebugValues(self):
         if 0:
