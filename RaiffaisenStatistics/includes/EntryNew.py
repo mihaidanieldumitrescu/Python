@@ -12,13 +12,14 @@ class EntryNew:
  
     
     def validateEntries(self, period, month, year, description, value, label):
+        periodInt = int (period) 
         if period == 'liquidation' or period == 'advance':      
             self.period = "period"
-        elif period > 0 and period < 10:
+        elif periodInt >= 1 and periodInt < 10:
             self.period = "advance"
-        elif period > 10 and period < 25:
+        elif periodInt >= 10 and periodInt < 25:
             self.period = "liqudation"
-        elif period > 25 and period <= 31:
+        elif periodInt >= 25 and periodInt <= 31:
             self.period = "advance"    
         else:
             return "Error: Period must be either 'liquidation' or 'advance'"
