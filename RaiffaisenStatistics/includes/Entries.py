@@ -25,7 +25,7 @@ class Entries(EntryNew):
         
     def printValues(self):
         for entry in self.currentYear:
-            entry.printEntryValues()
+            str( entry )
             
     def retValuesDict(self):
         tempStr = ""

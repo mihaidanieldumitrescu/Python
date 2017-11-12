@@ -12,8 +12,8 @@ class WriteHtmlOutput:
 		self.inputFileName = entry.csvInputfile
 		self.buffer = ""
 		self.monthsArr  = [ "August", "September", "October", "November", "December", "January" , "February" , "March" , "April", "May" , "June" , "July" ]	
-        	self.fig = figure(title=self.inputFileName + '_by_categories', height=600, width=800)   
-        	self.fig2 = figure(title=self.inputFileName + '_by_months', height=600, width=800)       
+		self.fig = figure(title=self.inputFileName + '_by_categories', height=600, width=800)   
+		self.fig2 = figure(title=self.inputFileName + '_by_months', height=600, width=800)       
 		self.htmlOutput = HTML()
 		self.printMe = entry
 		self.totalSpentMonth = {}
@@ -37,7 +37,7 @@ class WriteHtmlOutput:
 			index += 1
 			tdBefore = index 
 			tdAfter = 12 - index
- 			self.totalSpentMonth[currMonth] = 0
+			self.totalSpentMonth[currMonth] = 0
 			entries = self.printMe.dictCurrentYear
 
 			headerRow = table.tr (style="border: none")
@@ -59,9 +59,9 @@ class WriteHtmlOutput:
 						thirdRow.td() #empty div before input
 					thirdRow.td  ( entryNew.description)
 					thirdRow.td  ( entryNew.value + " lei", style="text-align: right") 
- 					self.totalSpentMonth[currMonth] +=  float (entryNew.value )
+					self.totalSpentMonth[currMonth] +=  float (entryNew.value )
 					self.totalSpentCategory[entryNew.label] += float (entryNew.value )
-					
+
 				for time in range(tdAfter):
 					headerRow.td() #empty div after input
 				headerRow = table.tr ()
@@ -95,15 +95,13 @@ class WriteHtmlOutput:
 		catData = ['Categories']
 		valuesData = ['lei']
 		for cat in self.totalSpentCategory:
-        		catData.append(cat)
+			catData.append(cat)
 			valuesData.append(self.totalSpentCategory[cat] * -1)
 		self.fig.column(catData,valuesData)
 		monthData = ['Months']
 		valuesData = ['lei']
 		for month in self.monthsArr:
-        		monthData.append(month)
-			valuesData.append(self.totalSpentMonth[month] * -1)
-
-				
+			monthData.append(month)
+			valuesData.append(self.totalSpentMonth[month] * -1)		
 
 		self.fig2.column(monthData,valuesData)

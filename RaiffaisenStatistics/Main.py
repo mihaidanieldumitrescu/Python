@@ -3,30 +3,26 @@
 import glob
 
 import xlrd
+
+from includes.Operations import Operations
 from includes.Entries import Entries
 from includes.WriteHtmlOutput import WriteHtmlOutput
 
 print "Main ran ...\n"
 
-debug = 0
+debug = 1
+fDebug = "./extrasDeCont/Extras_15165113_21042017.xls"
 
-files = glob.glob("./input/*xls")
 
-for f in files:
-	print "trying to open " + f 
-	book = xlrd.open_workbook( f )
-	sh = book.sheet_by_index(0)
-	for rx in range(sh.nrows):
-		index = 0
-		for cell in sh.row(rx):
-			if ( str (cell).find("empty")) != -1:
-				next
-			print( str ( cell ) + " ")
-			index += 1
-		print "\n\n"
-	print "\n\n" 
+files = glob.glob("./extrasDeCont/*xls")
+
+#for f in files:
 
 
 if debug == 1:
-	lastYear.loadDebugValues()
+	files = [fDebug]
+
+loadData = Operations ()
+for f in files:
+	loadData.extractDataXLS(f)
 #writer = WriteHtmlOutput( Entries("statistici2016.csv") )
