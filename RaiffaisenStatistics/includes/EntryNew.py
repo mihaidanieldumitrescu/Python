@@ -3,7 +3,7 @@
 class EntryNew:
     def __init__(self, period="undef", month=-1, year=-1, description="undef", value=-1, label="undef"):
         self.period = period
-        self.month = month 
+        self.month = month.lstrip("0")
         self.year = year 
         self.description = description 
         self.value =  value 
@@ -25,7 +25,7 @@ class EntryNew:
             return "Error: Period must be either 'liquidation' or 'advance'"
         
         if month > 0 and month <= 12:      
-            self.month = month
+            self.month = month.lstrip("0")
         else:
             return "Error: Month value is invalid"
         

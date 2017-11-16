@@ -31,8 +31,9 @@ class WriteHtmlOutput:
 		table = self.htmlOutput.table()
 		index = 0
 
-		for currMonth in monthsArr:
 		#for each defined period aug - july
+		for currMonth in monthsArr:
+		
 			
 			index += 1
 			tdBefore = index 
@@ -87,7 +88,7 @@ class WriteHtmlOutput:
 		output.write ( self.buffer )
 		output.close
 		print  "by Category\n\n"
-		pprint (self.totalSpentCategory )
+		pprint ( self.totalSpentCategory )
 		print  "\nby Month\n\n"
 		pprint ( self.totalSpentMonth )
 

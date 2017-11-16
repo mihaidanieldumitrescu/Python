@@ -9,9 +9,13 @@ class Operations:
     
     
     def __init__(self):
-        self.entries = {}
-        self.entries['cashSpent'] = [] 
-        self.entries['cashReceived'] = []
+        self.entries = Entries( "" )
+        self.errorString = ""
+        self.totalSpentMonth = {}
+        
+    def __del__(self):
+        if self.errorString:
+            print "Following errors have been found after run: \n\n" + self.errorString
     
     def extractDataXLS(self, filename):
         print "trying to open " + filename
@@ -23,22 +27,29 @@ class Operations:
             #validate rows
             if ( re.search ( "\d\d\/\d\d/\\d\d\d\d", str(currRow[0]) ) and
                  re.search ( "\d\d\/\d\d/\\d\d\d\d", str(currRow[1]) )):
-                print ( "Read from Excel \n\n" +
+                data = ( "Read from Excel \n\n" +
                        "  Data: %s \n " +
                        "  Nume: %s\n " +
                        "  Valoare debit: %s Valoare credit: %s\n") % (currRow[1].value,  currRow[11].value.split("|")[0],
                                                                       currRow[2].value,  currRow[3].value )
-                date = str(currRow[1].value).split("/")
+                (day, month, year) = str(currRow[1].value).split("/")
+                opDescription = currRow[11].value.split("|")[0]
+                debitValue = currRow[2].value
+                creditValue = currRow[3].value
+                
                 #self, period="undef", month=-1, year=-1, description.lower()="undef", value=-1, label="undef"
-                if currRow[2].value:
-                    test = EntryNew( date[0], date[1], date[2], currRow[11].value.split("|")[0], currRow[2].value, self.labelMe(currRow[11].value.split("|")[0]) )
-                    print str (test)
+                if debitValue:
+                    self.entries.newEntry( EntryNew( day, month, year, opDescription, debitValue, self.labelMe( opDescription ) ))               
+                elif creditValue:
+                    self.entries.newEntry( EntryNew( day, month, year, opDescription, creditValue, "alimentare cont" ))
                 else:
-                    # intrare credit
-                    self.entries['cashReceived'].append (currRow[3].value )
+                    self.errorString += "Warn: No debit or credit values! \n\t* Row is: currRow\n\n"
+
             else:
                 pass
-                #print currRow
+            
+        self.entries.printStatistics()
+
 
     def labelMe(self, description):
         label = ""

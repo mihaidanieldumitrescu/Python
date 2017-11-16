@@ -10,7 +10,7 @@ from includes.WriteHtmlOutput import WriteHtmlOutput
 
 print "Main ran ...\n"
 
-debug = 1
+debug = 0
 fDebug = "./extrasDeCont/Extras_15165113_21042017.xls"
 
 
