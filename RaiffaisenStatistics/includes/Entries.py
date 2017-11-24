@@ -48,9 +48,12 @@ class Entries(EntryNew):
         for currYear in sorted(keyYears):
             for currMonth in sorted(keyMonth):
                 for currPeriod in sorted( keyPeriods ):
+                    
+                    # 2017, 8, liqudation 
                     print "%s, %s, %s \n\n" % ( currYear, currMonth, currPeriod )
                     
                     labelsPeriod = {}
+                    otherOperations = "List of other operations: \n\n"
                     
                     for currLabel in keyLabels:
                         labelsPeriod[currLabel] = 0
@@ -58,7 +61,14 @@ class Entries(EntryNew):
                     for currLabel in keyLabels:
                         for currEntry in self.currentYear:
                             if currEntry.year == currYear and currEntry.month == currMonth and currEntry.period == currPeriod and currEntry.label == currLabel:
-                                labelsPeriod[currLabel] += currEntry.value 
+                                # debug print str ( currEntry ) 
+                                labelsPeriod[currLabel] += currEntry.value
+                                if currEntry.label == "other":
+                                    otherOperations += currEntry.description + "\n"
+
+                    print "\n"
+                    print otherOperations
+                                
                     for label in sorted(labelsPeriod):
                         print "%s => %s lei" % ( label, labelsPeriod[label])
                     print "\n"

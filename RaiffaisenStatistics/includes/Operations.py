@@ -14,6 +14,7 @@ class Operations:
         self.totalSpentMonth = {}
         
     def __del__(self):
+        self.entries.printStatistics()
         if self.errorString:
             print "Following errors have been found after run: \n\n" + self.errorString
     
@@ -36,19 +37,19 @@ class Operations:
                 opDescription = currRow[11].value.split("|")[0]
                 debitValue = currRow[2].value
                 creditValue = currRow[3].value
+                labelStr = self.labelMe( opDescription )
                 
                 #self, period="undef", month=-1, year=-1, description.lower()="undef", value=-1, label="undef"
                 if debitValue:
-                    self.entries.newEntry( EntryNew( day, month, year, opDescription, debitValue, self.labelMe( opDescription ) ))               
+                    self.entries.newEntry( EntryNew( day, month, year, opDescription, debitValue, labelStr ))               
                 elif creditValue:
                     self.entries.newEntry( EntryNew( day, month, year, opDescription, creditValue, "alimentare cont" ))
                 else:
                     self.errorString += "Warn: No debit or credit values! \n\t* Row is: currRow\n\n"
 
             else:
+                #these are the rows we are not interested in
                 pass
-            
-        self.entries.printStatistics()
 
 
     def labelMe(self, description):
