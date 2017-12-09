@@ -18,7 +18,7 @@ class EntryNew:
         elif periodInt >= 1 and periodInt < 10:
             self.period = "advance"
         elif periodInt >= 10 and periodInt < 25:
-            self.period = "liqudation"
+            self.period = "liquidation"
         elif periodInt >= 25 and periodInt <= 31:
             self.period = "advance"    
         else:
