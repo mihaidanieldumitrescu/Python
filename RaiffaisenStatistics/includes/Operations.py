@@ -1,6 +1,7 @@
 import xlrd
 import re
 import pprint
+import json
 
 from Entries import Entries
 from EntryNew import EntryNew
@@ -8,10 +9,12 @@ from EntryNew import EntryNew
 class Operations:
     
     
-    def __init__(self):
+    def __init__(self, verbosity="none"):
+        self.configFile = json.load(open('config/config.json'))
         self.entries = Entries( "" )
         self.errorString = ""
         self.totalSpentMonth = {}
+        self.verbosity = verbosity
         
     def __del__(self):
         self.entries.printStatistics()
@@ -28,22 +31,31 @@ class Operations:
             #validate rows
             if ( re.search ( "\d\d\/\d\d/\\d\d\d\d", str(currRow[0]) ) and
                  re.search ( "\d\d\/\d\d/\\d\d\d\d", str(currRow[1]) )):
-                data = ( "Read from Excel \n\n" +
-                       "  Data: %s \n " +
-                       "  Nume: %s\n " +
-                       "  Valoare debit: %s Valoare credit: %s\n") % (currRow[1].value,  currRow[11].value.split("|")[0],
-                                                                      currRow[2].value,  currRow[3].value )
+
                 (day, month, year) = str(currRow[1].value).split("/")
                 opDescription = currRow[11].value.split("|")[0]
+                if re.search("^OPIB", currRow[11].value):
+                   opDescription = currRow[11].value.split("|")[1]
                 debitValue = currRow[2].value
                 creditValue = currRow[3].value
                 labelStr = self.labelMe( opDescription )
+
+                data = ( "  Data: %s Operatie: %s Eticheta: %s\n " +
+                         "  Valoare debit: %s Valoare credit: %s\n") % (currRow[1].value,  opDescription, self.labelMe( opDescription ),
+                                                                      debitValue,  creditValue )
+                if self.verbosity == "low":
+                    print data
                 
                 #self, period="undef", month=-1, year=-1, description.lower()="undef", value=-1, label="undef"
                 if debitValue:
                     self.entries.newEntry( EntryNew( day, month, year, opDescription, debitValue, labelStr ))               
                 elif creditValue:
-                    self.entries.newEntry( EntryNew( day, month, year, opDescription, creditValue, "alimentare cont" ))
+                    print "credit: %s : %s \n" % ( opDescription, creditValue )
+                    if re.search( self.configFile['salaryFirmName'], currRow[8].value, re.IGNORECASE):
+                        print "salariu? '%s' \n" % ( currRow[8].value )
+                        self.entries.newEntry( EntryNew( day, month, year, opDescription, creditValue, "salariu" ))
+                    else:
+                        self.entries.newEntry( EntryNew( day, month, year, opDescription, creditValue, "transferati in cont" ))
                 else:
                     self.errorString += "Warn: No debit or credit values! \n\t* Row is: currRow\n\n"
 
@@ -54,30 +66,10 @@ class Operations:
 
     def labelMe(self, description):
         label = ""
-        food = []
-        if re.search ("lebanese food|q s inn|chopstix|subway|toan|kfc|" +
-                       "us food|novo|restaurant|taksim|deliciul|expert pranzo",description.lower() ):
-            return "food"
+        labelDict = self.configFile['labelDict']
         
-        if re.search ("lidl|mega|cora|carrefour", description.lower() ):
-            return "supermarket"
-        
-        if re.search ("atm", description.lower()):
-            return "cash ATM"
-
-        if re.search ("uber",description.lower() ):
-            return "uber"
-
-        if re.search("cinema|therme", description.lower()):
-            return "fun"
-
-        if re.search("roumasport", description.lower()):
-            return "decathlon"
-        
-        if re.search("emag", description.lower()):
-            return "emag"
-
-        if re.search("enel|engie|upc", description.lower()):
-            return "utilitati"
+        for label in labelDict:    
+            if re.search ( labelDict[label], description.lower() ):
+                return label
 
         return "other"
