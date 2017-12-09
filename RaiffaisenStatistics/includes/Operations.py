@@ -50,9 +50,9 @@ class Operations:
                 if debitValue:
                     self.entries.newEntry( EntryNew( day, month, year, opDescription, debitValue, labelStr ))               
                 elif creditValue:
-                    print "credit: %s : %s \n" % ( opDescription, creditValue )
+                    #print "credit: %s : %s \n" % ( opDescription, creditValue )
                     if re.search( self.configFile['salaryFirmName'], currRow[8].value, re.IGNORECASE):
-                        print "salariu? '%s' \n" % ( currRow[8].value )
+
                         self.entries.newEntry( EntryNew( day, month, year, opDescription, creditValue, "salariu" ))
                     else:
                         self.entries.newEntry( EntryNew( day, month, year, opDescription, creditValue, "transferati in cont" ))
@@ -65,7 +65,7 @@ class Operations:
 
 
     def labelMe(self, description):
-        label = ""
+
         labelDict = self.configFile['labelDict']
         
         for label in labelDict:    

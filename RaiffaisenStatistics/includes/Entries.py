@@ -1,8 +1,8 @@
 from EntryNew import EntryNew
 
 from html import HTML
-from pprint import pprint
 
+import pprint
 import os.path
 import re
 
@@ -20,7 +20,19 @@ class Entries(EntryNew):
         
         #used mainly for manually extracted csv files
         self.loadEntriesSCV()
+        
+        self.pp = pprint.PrettyPrinter()
+        self.errorMsg = ""
+        self.debugOutput = ""
+        
+    def __del__(self):
+                
+        if self.debugOutput != "":
+            print "(Entries) Debug output: \n\n" + self.debugOutput + "\n" 
 
+        if self.errorMsg != "":
+            print "(Entries) Errors found: \n\n" + self.errorMsg + "\n" 
+        
     def __str__(self):
         tmp = ""
         for item in self.statistics.iteritems():
@@ -44,35 +56,123 @@ class Entries(EntryNew):
               keyPeriods[entryNewItem.period],
               keyLabels[ entryNewItem.label] ) = (  "", "", "", "" )
         
-        #dict initialisation
+        # each extracted key found in data array
         for currYear in sorted(keyYears):
             for currMonth in sorted(keyMonth):
+                
+                monthStatistics = ""
+                bufferMonth = {
+                                "leftOtherOp" : [],
+                                "rightOtherOp" : [],
+                                "leftLabels" : [],
+                                "rightLabels" : []
+                              }
+                tmpStatistics = ""
+                liquidationStatistics = []
+                advanceStatistics = []
                 for currPeriod in sorted( keyPeriods ):
                     
-                    # 2017, 8, liqudation 
-                    print "%s, %s, %s \n\n" % ( currYear, currMonth, currPeriod )
-                    
                     labelsPeriod = {}
-                    otherOperations = "List of other operations: \n\n"
+                    otherOperations = currPeriod + " entries: \n\n"
+                    labelSummary = ""
+                    columnSize = 50
                     
                     for currLabel in keyLabels:
                         labelsPeriod[currLabel] = 0
-                        
+                    
+                    # match values, print others    
                     for currLabel in keyLabels:
                         for currEntry in self.currentYear:
-                            if currEntry.year == currYear and currEntry.month == currMonth and currEntry.period == currPeriod and currEntry.label == currLabel:
+                            if ( currEntry.year == currYear and
+                                 currEntry.month == currMonth and
+                                 currEntry.period == currPeriod and
+                                 currEntry.label == currLabel):
+                                
                                 # debug print str ( currEntry ) 
                                 labelsPeriod[currLabel] += currEntry.value
                                 if currEntry.label == "other":
-                                    otherOperations += currEntry.description + "\n"
+                                    otherOperations += ( "%s - %s\n" % ( currEntry.description.ljust(30), ( str( currEntry.value) + " lei" ).ljust(10) ) )
 
-                    print "\n"
-                    print otherOperations
+                    
+                    #print labels
+                    hasData = 0
+                    for label in sorted( labelsPeriod ):
+                        if labelsPeriod[label] != 0:
+                            hasData = 1
+            
+                    if hasData:                    
+                        # 2017, 8, liquidation 
+                        print "%s, %s, %s \n\n" % ( currYear, currMonth, currPeriod )
+                            
+                        print '-' * 10 + "\n"
+                        
+                        for label in sorted( labelsPeriod ):
+                            labelSummary += ("\t%s => %s lei \n" % ( label.ljust(20), labelsPeriod[label]))
+                        
+                        #print otherOperations
+                        #print labelSummary + "\n"
+                        
+                        if currPeriod == "liquidation":
+                           
+                            if otherOperations.split("\n"): 
+                                bufferMonth["leftOtherOp"] = otherOperations.split("\n")
+                            if labelSummary.split("\n"):
+                                bufferMonth["leftLabels"] = labelSummary.split("\n")
                                 
-                    for label in sorted(labelsPeriod):
-                        print "%s => %s lei" % ( label, labelsPeriod[label])
+                        elif currPeriod == "advance":
+                            
+                            if otherOperations.split("\n"):
+                                bufferMonth["rightOtherOp"] = otherOperations.split("\n")
+                                
+                            if labelSummary.split("\n"):
+                                bufferMonth["rightLabels"] = labelSummary.split("\n")
+                        else:
+                            self.errorMsg += ( "Error: Label '" + currPeriod + "' should not exist! \n\n " +
+                                               otherOperations + labelSummary + "\n"
+                                              )
+                        # balance elemnts -> equal number of elemnts left and right 
+                        deltaOtherOp = int ( len ( bufferMonth['leftOtherOp']) - len (bufferMonth['rightOtherOp']) )
+                        deltaLabels =  int ( len ( bufferMonth['leftLabels'] ) - len (bufferMonth['rightLabels'])  )
+                        
+                        if deltaOtherOp > 0:
+                            for i in range ( deltaOtherOp ) : 
+                                bufferMonth['rightOtherOp'].append( ( "") )
+                        elif deltaOtherOp < 0:
+                            for i in range ( - deltaOtherOp ) : 
+                                bufferMonth['leftOtherOp'].append( "" )
+                        
+                        if deltaLabels > 0:
+                            for i in range ( deltaLabels  ) :
+                                bufferMonth['rightLabels'].append( "" )
+                        elif deltaLabels < 0:
+                            for i in range ( - deltaLabels ) :
+                                bufferMonth['leftLabels'].append( "" )
+                                
+                        if self.verbosity == "low":
+                            print "delta values are: '%s' '%s' \n" % (deltaOtherOp, deltaLabels)
+                # after each month print results
+                
+
+                totalLines = max ( len ( advanceStatistics ), len ( liquidationStatistics ) )
+                
+                if 0:
+                    print "len values: %s %s \n" % (len ( bufferMonth['leftOtherOp'] ), len ( bufferMonth['rightOtherOp'] ))                    
+                    self.pp.pprint ( bufferMonth['leftOtherOp'] )
+                    self.pp.pprint ( bufferMonth['rightOtherOp'])
                     print "\n"
                     
+                bufferMonth['rightOtherOp'].reverse()    
+                for strOtherOp in bufferMonth['leftOtherOp']:
+                    monthStatistics += ( "%s | %s \n" % ( strOtherOp.ljust(columnSize),
+                                                          bufferMonth['rightOtherOp'].pop().ljust(columnSize) )) 
+                bufferMonth['rightLabels'].reverse()
+                for strLabels in bufferMonth['leftLabels']:
+                    monthStatistics += ( "%s | %s \n" % ( strLabels.ljust(columnSize),
+                                                          bufferMonth['rightLabels'].pop().ljust(columnSize) )) 
+                    
+                #self.debugOutput = advanceStatistics.join()
+                print monthStatistics + "\n\n"
+                #self.pp.pprint( bufferMonth )
                     
     def retValuesDict(self):
         tempStr = ""
