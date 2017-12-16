@@ -21,6 +21,7 @@ class Entries(EntryNew):
         #used mainly for manually extracted csv files
         self.loadEntriesSCV()
         
+        self.verbosity = "low" 
         self.pp = pprint.PrettyPrinter()
         self.errorMsg = ""
         self.debugOutput = ""
@@ -90,9 +91,8 @@ class Entries(EntryNew):
                                 
                                 # debug print str ( currEntry ) 
                                 labelsPeriod[currLabel] += currEntry.value
-                                if currEntry.label == "other":
+                                if currEntry.label == "spent.other":
                                     otherOperations += ( "%s - %s\n" % ( currEntry.description.ljust(30), ( str( currEntry.value) + " lei" ).ljust(10) ) )
-
                     
                     #print labels
                     hasData = 0
@@ -152,9 +152,6 @@ class Entries(EntryNew):
                             print "delta values are: '%s' '%s' \n" % (deltaOtherOp, deltaLabels)
                 # after each month print results
                 
-
-                totalLines = max ( len ( advanceStatistics ), len ( liquidationStatistics ) )
-                
                 if 0:
                     print "len values: %s %s \n" % (len ( bufferMonth['leftOtherOp'] ), len ( bufferMonth['rightOtherOp'] ))                    
                     self.pp.pprint ( bufferMonth['leftOtherOp'] )
@@ -210,6 +207,9 @@ class Entries(EntryNew):
             self.newEntry ( EntryNew( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]))
                     
             file.close()
+            if 0:
+                print "%s | %s | %s | %s | %s | %s \n" % ( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5])
+
         else:
             print "File '" + self.csvInputfile + "' was not found!\n"
         

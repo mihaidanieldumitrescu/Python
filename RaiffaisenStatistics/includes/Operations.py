@@ -9,7 +9,7 @@ from EntryNew import EntryNew
 class Operations:
     
     
-    def __init__(self, verbosity="none"):
+    def __init__(self, verbosity="high"):
         self.configFile = json.load(open('config/config.json'))
         self.entries = Entries( "" )
         self.errorString = ""
@@ -43,7 +43,7 @@ class Operations:
                 data = ( "  Data: %s Operatie: %s Eticheta: %s\n " +
                          "  Valoare debit: %s Valoare credit: %s\n") % (currRow[1].value,  opDescription, self.labelMe( opDescription ),
                                                                       debitValue,  creditValue )
-                if self.verbosity == "low":
+                if self.verbosity == "high":
                     print data
                 
                 #self, period="undef", month=-1, year=-1, description.lower()="undef", value=-1, label="undef"
@@ -53,9 +53,9 @@ class Operations:
                     #print "credit: %s : %s \n" % ( opDescription, creditValue )
                     if re.search( self.configFile['salaryFirmName'], currRow[8].value, re.IGNORECASE):
 
-                        self.entries.newEntry( EntryNew( day, month, year, opDescription, creditValue, "salariu" ))
+                        self.entries.newEntry( EntryNew( day, month, year, opDescription, creditValue, "_salary" ))
                     else:
-                        self.entries.newEntry( EntryNew( day, month, year, opDescription, creditValue, "transferati in cont" ))
+                        self.entries.newEntry( EntryNew( day, month, year, opDescription, creditValue, "_transferredInto" ))
                 else:
                     self.errorString += "Warn: No debit or credit values! \n\t* Row is: currRow\n\n"
 
@@ -72,4 +72,4 @@ class Operations:
             if re.search ( labelDict[label], description.lower() ):
                 return label
 
-        return "other"
+        return "spent.other"
