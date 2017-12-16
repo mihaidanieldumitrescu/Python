@@ -21,7 +21,7 @@ class Entries(EntryNew):
         #used mainly for manually extracted csv files
         self.loadEntriesSCV()
         
-        self.verbosity = "low" 
+        self.verbosity = "none" 
         self.pp = pprint.PrettyPrinter()
         self.errorMsg = ""
         self.debugOutput = ""

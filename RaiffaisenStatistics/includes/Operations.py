@@ -9,7 +9,7 @@ from EntryNew import EntryNew
 class Operations:
     
     
-    def __init__(self, verbosity="high"):
+    def __init__(self, verbosity="none"):
         self.configFile = json.load(open('config/config.json'))
         self.entries = Entries( "" )
         self.errorString = ""
