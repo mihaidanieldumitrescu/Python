@@ -12,20 +12,28 @@ class EntryNew:
  
     
     def validateEntries(self, period, month, year, description, value, label):
-        periodInt = int (period) 
+        advanceSubtractMonth = 0 
+        periodInt = int (period)
+        print "Debug periodInt '%s' \n"  % ( periodInt )
         if period == 'liquidation' or period == 'advance':      
-            self.period = "period"
+            self.period = period
         elif periodInt >= 1 and periodInt < 10:
             self.period = "advance"
+            advanceSubtractMonth = 1
         elif periodInt >= 10 and periodInt < 25:
             self.period = "liquidation"
         elif periodInt >= 25 and periodInt <= 31:
             self.period = "advance"    
         else:
             return "Error: Period must be either 'liquidation' or 'advance'"
-        month = int ( month.lstrip("0"))
+        month = int ( month )
         if month > 0 and month <= 12:      
             self.month = month
+            if advanceSubtractMonth:
+                if month == 1: 
+                    self.month = 12
+                else:
+                    self.month -= 1
         else:
             return "Error: Month value is invalid"
         year = int ( year )
