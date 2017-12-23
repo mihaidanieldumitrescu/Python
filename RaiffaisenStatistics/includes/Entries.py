@@ -2,29 +2,34 @@ from EntryNew import EntryNew
 
 from html import HTML
 
+import xlrd
+import glob
 import pprint
 import os.path
 import re
+import json
 
 class Entries(EntryNew):
     
     def __init__(self, inputFile):
-
+        self.configFile = json.load(open(os.path.join ( "config", "definedLabels.json")))
          #another line graph, but with two data types. Also adding title
-        self.csvInputfile = inputFile
         self.currentYear = []
         #this is intermediary
         self.dictCurrentYear = {}
         #{year}{month}{period} => value
         self.statistics = {}
-        
-        #used mainly for manually extracted csv files
-        self.loadEntriesSCV()
+
         
         self.verbosity = "none" 
         self.pp = pprint.PrettyPrinter()
         self.errorMsg = ""
         self.debugOutput = ""
+        self.verbosity = "none"
+                
+        #used mainly for manually extracted csv files
+        self.loadEntriesSCV( "none")
+        self.extractDataXLS( inputFile )
         
     def __del__(self):
                 
@@ -195,9 +200,9 @@ class Entries(EntryNew):
         self.dictCurrentYear[newEnt.month][newEnt.period] = []
         self.dictCurrentYear[newEnt.month][newEnt.period].append(newEnt)
 
-    def loadEntriesSCV(self):
-        if os.path.isfile(self.csvInputfile):
-            file = open (self.csvInputfile , "r")
+    def loadEntriesSCV(self, inputFile):
+        if os.path.isfile( inputFile):
+            file = open ( inputFile , "r")
             for row in file:
                 elements = row.split(";")
                 if len(elements) == 6:
@@ -211,8 +216,64 @@ class Entries(EntryNew):
                 print "%s | %s | %s | %s | %s | %s \n" % ( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5])
 
         else:
-            print "File '" + self.csvInputfile + "' was not found!\n"
+            print "File '" + inputFile + "' was not found!\n"
+            
+    def extractDataXLS(self, dirname):
+        files = glob.glob( os.path.join ( "extrasDeCont", "*xls"))
+        for filename in files:
+    
+           print "trying to open " + filename
+           book = xlrd.open_workbook( filename )
+           sh = book.sheet_by_index(0)
+           for rx in range(sh.nrows):
+               index = 0
+               currRow = sh.row(rx)
+               #validate rows
+               if ( re.search ( "\d\d\/\d\d/\\d\d\d\d", str(currRow[0]) ) and
+                    re.search ( "\d\d\/\d\d/\\d\d\d\d", str(currRow[1]) )):
+   
+                   (day, month, year) = str(currRow[1].value).split("/")
+                   opDescription = currRow[11].value.split("|")[0]
+                   if re.search("^OPIB", currRow[11].value):
+                      opDescription = currRow[11].value.split("|")[1]
+                   debitValue = currRow[2].value
+                   creditValue = currRow[3].value
+                   labelStr = self.labelMe( opDescription )
+   
+                   data = ( "  Data: %s Operatie: %s Eticheta: %s\n " +
+                            "  Valoare debit: %s Valoare credit: %s\n") % (currRow[1].value,  opDescription, self.labelMe( opDescription ),
+                                                                         debitValue,  creditValue )
+                   if self.verbosity == "high":
+                       print data
+                   
+                   #self, period="undef", month=-1, year=-1, description.lower()="undef", value=-1, label="undef"
+                   if debitValue:
+                       self.newEntry( EntryNew( day, month, year, opDescription, debitValue, labelStr ))               
+                   elif creditValue:
+                       #print "credit: %s : %s \n" % ( opDescription, creditValue )
+                       if re.search( self.configFile['salaryFirmName'], currRow[8].value, re.IGNORECASE):
+   
+                           self.newEntry( EntryNew( day, month, year, opDescription, creditValue, "_salary" ))
+                       else:
+                           self.newEntry( EntryNew( day, month, year, opDescription, creditValue, "_transferredInto" ))
+                   else:
+                       self.errorString += "Warn: No debit or credit values! \n\t* Row is: currRow\n\n"
+   
+               else:
+                   #these are the rows we are not interested in
+                   pass
+
+
+    def labelMe(self, description):
+
+        labelDict = self.configFile['labelDict']
         
+        for label in labelDict:    
+            if re.search ( labelDict[label], description.lower() ):
+                return label
+
+        return "spent.other"
+    
     def loadDebugValues(self):
         if 0:
             self.currentYear.append ( EntryNew('liquidation', "1", 2017, "Drinks all night", '273', 'fun') )
