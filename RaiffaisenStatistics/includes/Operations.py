@@ -14,8 +14,9 @@ class Operations:
         self.errorString = ""
         self.totalSpentMonth = {}
         self.verbosity = verbosity
+        self.entries.printStatistics()
         
     def __del__(self):
-        self.entries.printStatistics()
+
         if self.errorString:
             print "Following errors have been found after run: \n\n" + self.errorString
