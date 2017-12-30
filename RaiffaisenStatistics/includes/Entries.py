@@ -20,7 +20,7 @@ class Entries(EntryNew):
         #{year}{month}{period} => value
         self.statistics = {}
 
-        
+        self.htmlOutput = HTML()
         self.verbosity = "none" 
         self.pp = pprint.PrettyPrinter()
         self.errorMsg = ""
@@ -28,7 +28,7 @@ class Entries(EntryNew):
         self.verbosity = "none"
                 
         #used mainly for manually extracted csv files
-        self.loadEntriesSCV( "none")
+        self.loadEntriesSCV( "manualInput\manual_described_operations_2015_2016_2017.csv")
         self.extractDataXLS( inputFile )
         
     def __del__(self):
@@ -139,6 +139,8 @@ class Entries(EntryNew):
                         deltaOtherOp = int ( len ( bufferMonth['leftOtherOp']) - len (bufferMonth['rightOtherOp']) )
                         deltaLabels =  int ( len ( bufferMonth['leftLabels'] ) - len (bufferMonth['rightLabels'])  )
                         
+                        # balancing number of elements from left and right divisions
+                        
                         if deltaOtherOp > 0:
                             for i in range ( deltaOtherOp ) : 
                                 bufferMonth['rightOtherOp'].append( ( "") )
@@ -146,6 +148,7 @@ class Entries(EntryNew):
                             for i in range ( - deltaOtherOp ) : 
                                 bufferMonth['leftOtherOp'].append( "" )
                         
+                        #for labels alsot 
                         if deltaLabels > 0:
                             for i in range ( deltaLabels  ) :
                                 bufferMonth['rightLabels'].append( "" )
@@ -162,16 +165,19 @@ class Entries(EntryNew):
                     self.pp.pprint ( bufferMonth['leftOtherOp'] )
                     self.pp.pprint ( bufferMonth['rightOtherOp'])
                     print "\n"
-                    
+
+                # merge and print labels from liquidation and advance for current month
+                bufferMonth['rightLabels'].reverse()
+                for strLabels in bufferMonth['leftLabels']:
+                    monthStatistics += ( "%s | %s \n" % ( strLabels.ljust(columnSize),
+                                                          bufferMonth['rightLabels'].pop().ljust(columnSize) ))
+                
+                # merge other operations from liquidation and advance for current month    
                 bufferMonth['rightOtherOp'].reverse()    
                 for strOtherOp in bufferMonth['leftOtherOp']:
                     monthStatistics += ( "%s | %s \n" % ( strOtherOp.ljust(columnSize),
                                                           bufferMonth['rightOtherOp'].pop().ljust(columnSize) )) 
-                bufferMonth['rightLabels'].reverse()
-                for strLabels in bufferMonth['leftLabels']:
-                    monthStatistics += ( "%s | %s \n" % ( strLabels.ljust(columnSize),
-                                                          bufferMonth['rightLabels'].pop().ljust(columnSize) )) 
-                    
+
                 #self.debugOutput = advanceStatistics.join()
                 print monthStatistics + "\n\n"
                 #self.pp.pprint( bufferMonth )
@@ -205,11 +211,15 @@ class Entries(EntryNew):
             file = open ( inputFile , "r")
             for row in file:
                 elements = row.split(";")
+                print len (elements)
+                if len ( elements ) == 1:
+                    continue
                 if len(elements) == 6:
                     elements[5] = elements[5].rstrip()
+                print elements
                 elements[4] = elements[4].replace(",", ".")
             
-            self.newEntry ( EntryNew( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]))
+            #self.newEntry ( EntryNew( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]))
                     
             file.close()
             if 0:
