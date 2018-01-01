@@ -28,7 +28,7 @@ class Entries(EntryNew):
         self.verbosity = "none"
                 
         #used mainly for manually extracted csv files
-        self.loadEntriesSCV( "manualInput\manual_described_operations_2015_2016_2017.csv")
+
         self.extractDataXLS( inputFile )
         
     def __del__(self):
@@ -107,8 +107,7 @@ class Entries(EntryNew):
             
                     if hasData:                    
                         # 2017, 8, liquidation 
-                        print "%s, %s, %s \n\n" % ( currYear, currMonth, currPeriod )
-                            
+                        print "%s, %s, %s" % ( currYear, currMonth, currPeriod )    
                         print '-' * 10 + "\n"
                         
                         for label in sorted( labelsPeriod ):
@@ -206,28 +205,6 @@ class Entries(EntryNew):
         self.dictCurrentYear[newEnt.month][newEnt.period] = []
         self.dictCurrentYear[newEnt.month][newEnt.period].append(newEnt)
 
-    def loadEntriesSCV(self, inputFile):
-        if os.path.isfile( inputFile):
-            file = open ( inputFile , "r")
-            for row in file:
-                elements = row.split(";")
-                print len (elements)
-                if len ( elements ) == 1:
-                    continue
-                if len(elements) == 6:
-                    elements[5] = elements[5].rstrip()
-                print elements
-                elements[4] = elements[4].replace(",", ".")
-            
-            #self.newEntry ( EntryNew( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]))
-                    
-            file.close()
-            if 0:
-                print "%s | %s | %s | %s | %s | %s \n" % ( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5])
-
-        else:
-            print "File '" + inputFile + "' was not found!\n"
-            
     def extractDataXLS(self, dirname):
         files = glob.glob( os.path.join ( "extrasDeCont", "*xls"))
         for filename in files:
