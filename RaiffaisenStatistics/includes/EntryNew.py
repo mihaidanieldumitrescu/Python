@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import re
+
 class EntryNew:
     def __init__(self, period="undef", month=-1, year=-1, description="undef", value=-1, label="undef"):
         self.period = period
@@ -12,32 +14,38 @@ class EntryNew:
  
     
     def validateEntries(self, period, month, year, description, value, label):
-        advanceSubtractMonth = 0 
-        periodInt = int (period)
+        advanceSubtractMonth = 0
         year = int ( year )
         #print "Debug periodInt '%s' \n"  % ( periodInt )
         if period == 'liquidation' or period == 'advance':      
             self.period = period
-        elif periodInt >= 1 and periodInt < 10:
-            self.period = "advance"
-            advanceSubtractMonth = 1
-        elif periodInt >= 10 and periodInt < 25:
-            self.period = "liquidation"
-        elif periodInt >= 25 and periodInt <= 31:
-            self.period = "advance"    
         else:
-            return "Error: Period must be either 'liquidation' or 'advance'"
-        month = int ( month )
-        if month > 0 and month <= 12:      
+            
+            periodInt = int ( period )
+            if periodInt >= 1 and periodInt < 10:
+                self.period = "advance"
+                advanceSubtractMonth = 1
+            elif periodInt >= 10 and periodInt < 25:
+                self.period = "liquidation"
+            elif periodInt >= 25 and periodInt <= 31:
+                self.period = "advance"    
+            else:
+                return "Error: Period must be either 'liquidation' or 'advance'"
+            
+        if ( re.match ( "[a-zA-Z]+", month) ):
             self.month = month
-            if advanceSubtractMonth:
-                if month == 1: 
-                    self.month = 12
-                    year -= 1
-                else:
-                    self.month -= 1
+        elif ( ( re.match ( "[0-9]+", month) )):
+            month = int ( month )
+            if month > 0 and month <= 12:      
+                self.month = month
+                if advanceSubtractMonth:
+                    if month == 1: 
+                        self.month = 12
+                        year -= 1
+                    else:
+                        self.month -= 1
         else:
-            return "Error: Month value is invalid"
+                return "Error: Month value is invalid"
         
         if year > 2000:
            self.year = year
