@@ -6,12 +6,14 @@ class iaBilet( object ):
 
 	def __init__(self):
 		self.events = []
+		self.config
+		self.loadConfig()
 		self.loadPage()
 
 	def __str__(self):
 		tmp = "Printing list of extracted objects: \n\n"
 		for eventName in sorted ( self.events ):
-			tmp += "Found '%s' with '%s' \n" % ( streamerName.ljust(20), self.events[eventName])		
+			tmp += "Found '%s' with '%s' \n" % ( eventName.ljust(20), self.events[eventName])		
 		return tmp		
 
 	def loadPage(self):
@@ -30,8 +32,12 @@ class iaBilet( object ):
 				#self.events.append ( data ['name'])
 		if len (self.events) == 0:
 			print "Error: Cannot extract anything from page!\n"
+			
+	def loadConfig (self):
+		with open ( os.path.join ( "config", "config.json") ) as f:
+			self.config = json.load( f )
 	
-	def isStreamerOnline(self,eventName):
+	def isEventFound(self, eventName):
 		for event in self.events:	
 			if event == eventName:
 				return 1
