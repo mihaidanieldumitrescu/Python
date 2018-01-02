@@ -3,9 +3,9 @@ import urllib2
 
 class Olx(object):
 
-	def __init__(self):
+	def __init__(self, searchStr):
 		self.products = []
-		self.loadProducts("asus-transformer")
+		self.loadProducts( searchStr )
 
 	def _del__(self):
 		print self.products
@@ -13,7 +13,7 @@ class Olx(object):
 	def loadProducts (self, productName):
 
 		url = "https://www.olx.ro/oferta/q-" + productName + "/"
-		url = "https://www.olx.ro/oferte/q-asus-transformer/"
+		#url = "https://www.olx.ro/oferte/q-asus-transformer/"
 		while url != "":
 
 			print "Attempting to open the following url: '%s' \n\n" % ( url )
@@ -38,6 +38,7 @@ class Olx(object):
 			    priceArr = ( link.find_all( 'p', { "class" : "price"}))
 			    if priceArr[0]:
 			    	productPrice = priceArr[0].strong.string
+				print { "desc" : productTitle, "price" : productPrice }
 			    self.products.append({ "desc" : productTitle, "price" : productPrice })
 
 			lastPage = soup.find_all ("div", { "class": "pager rel clr"})
@@ -56,4 +57,4 @@ class Olx(object):
 				print "Error in link next page\n\n %s \n" % ( linkNextPage ) 
 				print ValueError
 
-			print str ( linkNextPage )
+			#print str ( linkNextPage )
