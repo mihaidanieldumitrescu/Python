@@ -4,105 +4,180 @@ from EntryNew import EntryNew
 
 from gpcharts import figure
 from pprint import pprint
+import os
 
 
 class WriteHtmlOutput:
 
-	def __init__(self, entry):
-		self.inputFileName = entry.csvInputfile
+	def __init__( self ):
+
+		self.splitPeriodsEntries = {}
 		self.buffer = ""
-		self.monthsArr  = [ "August", "September", "October", "November", "December", "January" , "February" , "March" , "April", "May" , "June" , "July" ]	
-		self.fig = figure(title=self.inputFileName + '_by_categories', height=600, width=800)   
-		self.fig2 = figure(title=self.inputFileName + '_by_months', height=600, width=800)       
-		self.htmlOutput = HTML()
-		self.printMe = entry
-		self.totalSpentMonth = {}
-		self.totalSpentCategory = {}
-		for entry in self.printMe.retReference():
-			self.totalSpentCategory[entry.label] = 0
-		self.bufferMainTable()
-		self.writeOutput()
-		self.writeGPchart()
-
-
-	def bufferMainTable(self):
-
-		monthsArr = self.monthsArr
-		table = self.htmlOutput.table()
-		index = 0
-
-		#for each defined period aug - july
-		for currMonth in monthsArr:
 		
+	def run ( self ):
+
+		self.loadEntriesCSV ( os.path.join ( "manualInput", "manual_described_operations_2015_2016_2017.csv") )
+		if not os.path.exists ( 'output'):
+			os.mkdir ( "output" )
 			
-			index += 1
-			tdBefore = index 
-			tdAfter = 12 - index
-			self.totalSpentMonth[currMonth] = 0
-			entries = self.printMe.dictCurrentYear
-
-			headerRow = table.tr (style="border: none")
-			headerRow.td ( currMonth, style="background-color: lightblue" )	
-			headerRow.td ()		
+		for year in self.splitPeriodsEntries:
+			entriesForPeriod = self.splitPeriodsEntries[year]
+			statistics = self.statistics ( entriesForPeriod )
+			self.overviewStatistics ( entriesForPeriod, statistics )
+			#self.writeGPchart ( entriesForPeriod, statistics  )
+			self.writeIndexHTML ( entriesForPeriod )
+		
+	def loadEntriesCSV(self, inputFile):
+		allEntries = []
+		if os.path.isfile( inputFile):
+			with open ( inputFile , "r") as file:
+				for row in file:
+					elements = row.split(";")
+					
+					if len ( elements ) == 1:
+						continue
+					if len(elements) == 6:
+						elements[5] = elements[5].rstrip()
+					elements[4] = elements[4].replace(",", ".")
+					
+					#    0		  1			  2		3	      4		 5
+					# liquidation;September;2017;Decathlon;-286;echipamen
+					allEntries.append ( EntryNew ( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]) )
 			
-			for period in ["liquidation", "advance" ]:
-				hasEntries = len ( self.printMe.getEntriesFor( period, currMonth ))
-				if not hasEntries:
-					continue
+			if 0:
+				print "%s | %s | %s | %s | %s | %s \n" % ( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5])
 
-				headerRow.td(period, style="background-color: lightblue; text-align: center" )
-				headerRow = table.tr
-				secondRow = table.tr
+		else:
+			print "File '" + inputFile + "' was not found!\n"
+		
+		monthsFirstSemester  =  [ "August", "September", "October", "November", "December" ]
+		monthsSecondSemester  = [  "January", "February", "March", "April", "May", "June", "July" ]
 
-				for entryNew in self.printMe.getEntriesFor( period, currMonth ):
-					thirdRow = table.tr
-					for time in range(tdBefore):
-						thirdRow.td() #empty div before input
-					thirdRow.td  ( entryNew.description)
-					thirdRow.td  ( entryNew.value + " lei", style="text-align: right") 
-					self.totalSpentMonth[currMonth] +=  float (entryNew.value )
-					self.totalSpentCategory[entryNew.label] += float (entryNew.value )
+		years = []
+		
+		for entry in allEntries:
+			# how many years are there
+			if not ( entry.year in years ):
+				years.append ( entry.year )
+		for year in years:
+			tmpArr = []
+			for entry in allEntries:
+				if entry.year == year and ( entry.month in monthsFirstSemester ):
+					tmpArr.append ( entry ) 
+				elif entry.year == ( year + 1 ) and ( entry.month in monthsSecondSemester ):	
+					tmpArr.append ( entry )
+			self.splitPeriodsEntries[year] = tmpArr
 
-				for time in range(tdAfter):
-					headerRow.td() #empty div after input
-				headerRow = table.tr ()
-				headerRow.td()
-				headerRow.td()
-		finalRow = table.tr
-		finalRow.td( "Total:" , style="background-color:lightgrey; text-align: right")
-		for currMonth in monthsArr:
-			if self.totalSpentMonth[currMonth] != 0:
-				finalRow.td ( str ( self.totalSpentMonth[currMonth] ) + " lei", style="background-color:lightgreen; text-align: right")
+		
+	def overviewStatistics(self, data, statistics):
 
-		self.buffer +=   str (self.htmlOutput )
+		for currentPeriod in self.splitPeriodsEntries:
+			
+			index = 0
+			totalSpentMonth = statistics['eachMonth']
+			totalSpentCategory = statistics['eachCategory']
+			htmlOutput = HTML()
+			
+			table = htmlOutput.table()
 
-	def bufferHeader(self):
-		self.buffer += ""
-
-	def bufferFooter(self):
-		self.buffer += ""	
-
+			monthsArr  = [  "August", "September", "October", "November",
+							"December", "January" , "February" , "March" ,
+							"April", "May" , "June" , "July" ]
+				
+			#for each defined period aug - july
+			for currMonth in monthsArr:	
+				
+				index += 1
+				tdBefore = index 
+				tdAfter = 12 - index
+				entries = data
 	
-	def writeOutput(self):
-		output = open ( self.inputFileName + "_table_by_month.html", "w")
-		output.write ( self.buffer )
-		output.close
-		print  "by Category\n\n"
-		pprint ( self.totalSpentCategory )
-		print  "\nby Month\n\n"
-		pprint ( self.totalSpentMonth )
 
-	def writeGPchart(self):
+				
+				for period in ["liquidation", "advance" ]:
+					hasEntries = len ( data )
+					headerRow = table.tr (style="border: none")
+					headerRow.td ( currMonth, style="background-color: lightblue" )	
+					headerRow.td ( period, style="background-color: lightblue; text-align: center" )
+					headerRow = table.tr
+					secondRow = table.tr
+	
+					for entryNew in data:
+						if currMonth == entryNew.month and period == entryNew.period:
+							thirdRow = table.tr
+							for time in range(tdBefore):
+								#thirdRow.td() #empty div before input
+								pass
+							thirdRow.td  ( entryNew.description)
+							thirdRow.td  ( entryNew.value + " lei", style="text-align: right") 
+		
+					for time in range( tdAfter ):
+						#headerRow.td() #empty div after input
+						pass
+					headerRow = table.tr ()
+					headerRow.td()
+					headerRow.td()
+				finalRow = table.tr
+				finalRow.td( "Total:" , style="background-color:lightgrey; text-align: right")
+				finalRow.td ( str ( totalSpentMonth[currMonth] ) + " lei", style="background-color:lightgrey; text-align: right")
+				finalRow = table.tr()
+				finalRow.td()
+				finalRow.td()
+		
+			outputFilePath = os.path.join ( "output", "%s_%s" % (data[0].year, data[0].year + 1)  + "_overview.html" )
+			with open ( outputFilePath, "w") as output:
+				output.write ( str ( htmlOutput ) )
+				
+	def writeGPchart(self, data, statistics):
+		totalSpentCategory = statistics['eachCategory']
+		totalSpentMonth = statistics['eachMonth']
+		
+		monthsArr  = [ "August", "September", "October", "November",
+					   "December", "January" , "February" , "March" ,
+					   "April", "May" , "June" , "July" ]
+		os.chdir ("output")
+		
+		fig = figure  ( title="%s_%s" % (data[0].year, data[0].year + 1 ) + '_labelsCharts', height=600, width=800)   
+		fig2 = figure ( title="%s_%s" % (data[0].year, data[0].year + 1 ) + '_yearCharts', height=600, width=800)       
+
 		catData = ['Categories']
 		valuesData = ['lei']
-		for cat in self.totalSpentCategory:
-			catData.append(cat)
-			valuesData.append(self.totalSpentCategory[cat] * -1)
-		self.fig.column(catData,valuesData)
+		for key, value in sorted(totalSpentCategory.iteritems(), key=lambda (k,v): (v,k)):
+			catData.append(key)
+			valuesData.append(value * -1)
+			
+		fig.column(catData,valuesData)
 		monthData = ['Months']
 		valuesData = ['lei']
-		for month in self.monthsArr:
+		
+		for month in monthsArr:
 			monthData.append(month)
-			valuesData.append(self.totalSpentMonth[month] * -1)		
+			valuesData.append( totalSpentMonth[month] * -1 )		
 
-		self.fig2.column(monthData,valuesData)
+		fig2.column( monthData, valuesData )
+		os.chdir ("..")
+		
+	def writeIndexHTML(self, data):
+		with open ( os.path.join ( "output", "index.html" ), "w" ) as f:
+			f.write ("<html><body><h4>test</h4></body></html>")
+			
+	def statistics(self, data):
+		statistics = {}
+		statistics['eachMonth'] = {}
+		statistics['eachCategory'] = {}
+		
+		monthsArr  = [ "August", "September", "October", "November",
+						"December", "January" , "February" , "March" ,
+						"April", "May" , "June" , "July" ]
+		
+		for month in monthsArr:
+			statistics['eachMonth'][month] = 0
+		
+		for entry in data:
+			statistics['eachCategory'][entry.label] = 0
+			
+		for entry in data:	
+			statistics['eachMonth'][entry.month] +=  float ( entry.value )
+			statistics['eachCategory'][entry.label] += float ( entry.value )
+		
+		return statistics
