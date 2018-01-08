@@ -96,7 +96,7 @@ class Entries(EntryNew):
                                 
                                 # debug print str ( currEntry ) 
                                 labelsPeriod[currLabel] += currEntry.value
-                                if currEntry.label == "spent.other":
+                                if currEntry.label == "spent;other":
                                     otherOperations += ( "%s - %s\n" % ( currEntry.description.ljust(30), ( str( currEntry.value) + " lei" ).ljust(10) ) )
                     
                     #print labels
@@ -109,10 +109,14 @@ class Entries(EntryNew):
                         # 2017, 8, liquidation 
                         print "%s, %s, %s" % ( currYear, currMonth, currPeriod )    
                         print '-' * 10 + "\n"
-                        
+                        lastLabel = ""
                         for label in sorted( labelsPeriod ):
+                            if lastLabel != label.split(";")[0]:
+                                if not ( re.match ("^_", lastLabel) and re.match ("^_", label.split(";")[0])):
+                                    labelSummary += "\n" 
                             labelSummary += ("\t%s => %s lei \n" % ( label.ljust(20), labelsPeriod[label]))
-                        
+                            lastLabel = label.split(";")[0]
+
                         #print otherOperations
                         #print labelSummary + "\n"
                         
@@ -255,11 +259,12 @@ class Entries(EntryNew):
 
         labelDict = self.configFile['labelDict']
         
-        for label in labelDict:    
-            if re.search ( labelDict[label], description.lower() ):
-                return label
+        for labelCat in labelDict:
+            for label in labelDict [ labelCat ]:    
+                if re.search ( labelDict[ labelCat ][ label ], description.lower() ):
+                    return "%s;%s" % (labelCat, label)
 
-        return "spent.other"
+        return "spent;other"
     
     def loadDebugValues(self):
         if 0:
