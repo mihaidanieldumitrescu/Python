@@ -24,9 +24,15 @@ class EntryNew:
             periodInt = int ( period )
             if periodInt >= 1 and periodInt < 10:
                 self.period = "advance"
+                if label == "_salary" and ( periodInt >= 6 and periodInt < 10):
+                    label = "_salary_2"
+                    # add 1 month 
                 advanceSubtractMonth = 1
             elif periodInt >= 10 and periodInt < 25:
                 self.period = "liquidation"
+                if label == "_salary" and ( periodInt >= 20 and periodInt < 25):
+                    label = "_salary_2"
+                    # add 1 month
             elif periodInt >= 25 and periodInt <= 31:
                 self.period = "advance"    
             else:
