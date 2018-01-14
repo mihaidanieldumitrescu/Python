@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import glob
-
 import xlrd
 
 from includes.Operations import Operations
@@ -16,7 +15,6 @@ fDebug = "./extrasDeCont/Extras_15165113_21042017.xls"
 if debug == 1:
 	files = [fDebug]
 
-#loadData = Operations ()
-writer = WriteHtmlOutput()
-
-writer.run()
+loadData = Operations ()
+#writer = WriteHtmlOutput()
+#writer.run()
