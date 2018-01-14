@@ -12,13 +12,14 @@ import json
 class Entries(EntryNew):
     
     def __init__(self, inputFile):
-        self.configFile = json.load(open(os.path.join ( "config", "definedLabels.json")))
+        self.configFile = json.load(open(os.path.join (os.environ['OneDrive'], "PythonData", "config", "definedLabels.json")))
          #another line graph, but with two data types. Also adding title
         self.currentYear = []
         #this is intermediary
         self.dictCurrentYear = {}
         #{year}{month}{period} => value
         self.statistics = {}
+        self.manualEntries = []
 
         self.htmlOutput = HTML()
         self.verbosity = "none" 
@@ -210,7 +211,9 @@ class Entries(EntryNew):
         self.dictCurrentYear[newEnt.month][newEnt.period].append(newEnt)
 
     def extractDataXLS(self, dirname):
-        files = glob.glob( os.path.join ( "extrasDeCont", "*xls"))
+        files = glob.glob( os.path.join ( os.environ['OneDrive'], "PythonData" ,"extrasDeCont", "*xls"))
+        if len ( files ) == 0:
+            print "No files found in folder \n"
         for filename in files:
     
            print "trying to open " + filename
