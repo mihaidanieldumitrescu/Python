@@ -22,6 +22,7 @@ class Entries(EntryNew):
         self.manualEntries = []
 
         self.htmlOutput = HTML()
+        self.htmlFrame = {}
         self.verbosity = "none" 
         self.pp = pprint.PrettyPrinter()
         self.errorMsg = ""
@@ -33,7 +34,7 @@ class Entries(EntryNew):
         self.extractDataXLS( inputFile )
         
     def __del__(self):
-                
+        #print json.dumps( self.htmlFrame )
         if self.debugOutput != "":
             print "(Entries) Debug output: \n\n" + self.debugOutput + "\n" 
 
@@ -65,8 +66,9 @@ class Entries(EntryNew):
         
         # each extracted key found in data array
         for currYear in sorted(keyYears):
+            self.htmlFrame[currYear] = {}
             for currMonth in sorted(keyMonth):
-                
+                self.htmlFrame[currYear][currMonth] = {}
                 monthStatistics = ""
                 bufferMonth = {
                                 "leftOtherOp" : [],
@@ -78,7 +80,10 @@ class Entries(EntryNew):
                 liquidationStatistics = []
                 advanceStatistics = []
                 for currPeriod in sorted( keyPeriods ):
-                    
+                    self.htmlFrame[currYear][currMonth][currPeriod] = {
+                                                                        'labelSummary' : [],
+                                                                        'otherOperations' : []
+                                                                      }
                     labelsPeriod = {}
                     otherOperations = currPeriod + " entries: \n\n"
                     labelSummary = ""
@@ -98,6 +103,7 @@ class Entries(EntryNew):
                                 # debug print str ( currEntry ) 
                                 labelsPeriod[currLabel] += currEntry.value
                                 if currEntry.label == "spent;other":
+                                    self.htmlFrame[currYear][currMonth][currPeriod]['otherOperations'].append( { currEntry.description : currEntry.value } )
                                     otherOperations += ( "%s - %s\n" % ( currEntry.description.ljust(30), ( str( currEntry.value) + " lei" ).ljust(10) ) )
                     
                     #print labels
@@ -111,13 +117,25 @@ class Entries(EntryNew):
                         print "%s, %s, %s" % ( currYear, currMonth, currPeriod )    
                         print '-' * 10 + "\n"
                         lastLabel = ""
+                        totalLabel = 0
                         for label in sorted( labelsPeriod ):
-                            if lastLabel != label.split(";")[0]:
+                            if lastLabel != label.split(";")[0] and lastLabel != "":
                                 if not ( re.match ("^_", lastLabel) and re.match ("^_", label.split(";")[0])):
-                                    labelSummary += "\t\n" 
+                                    labelSummary += "\t\n"
+                                    labelSummary += ("\t%s => %s lei \n" % ( "".ljust(20), str( totalLabel ).rjust(7)))
+                                    labelSummary += "\t\n"
+                                    
+                                    totalLabel = 0
+                            totalLabel += labelsPeriod[label]
+                            
+                            self.htmlFrame[currYear][currMonth][currPeriod]['labelSummary'].append( { label : labelsPeriod [label] } )
+                            
                             labelSummary += ("\t%s => %s lei \n" % ( label.ljust(20), str( labelsPeriod[label]).rjust(7)))
                             lastLabel = label.split(";")[0]
+                        labelSummary += "\t\n"
+                        labelSummary += ("\t%s => %s lei \n" % ( "".ljust(20), str( totalLabel ).rjust(7)))
 
+                           # print lastLabel + "\n"
                         #print otherOperations
                         #print labelSummary + "\n"
                         
@@ -185,6 +203,7 @@ class Entries(EntryNew):
                 #self.debugOutput = advanceStatistics.join()
                 print monthStatistics + "\n\n"
                 #self.pp.pprint( bufferMonth )
+        return self.htmlFrame
                     
     def retValuesDict(self):
         tempStr = ""
