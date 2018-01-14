@@ -16,7 +16,7 @@ class WriteHtmlOutput:
 		
 	def run ( self ):
 
-		self.loadEntriesCSV ( os.path.join ( "manualInput", "manual_described_operations_2015_2016_2017.csv") )
+		self.loadEntriesCSV ( os.path.join ( os.environ['OneDrive'], "PythonData", "manualInput", "manual_described_operations_2015_2016_2017.csv") )
 		if not os.path.exists ( 'output'):
 			os.mkdir ( "output" )
 			
@@ -67,7 +67,7 @@ class WriteHtmlOutput:
 				elif entry.year == ( year + 1 ) and ( entry.month in monthsSecondSemester ):	
 					tmpArr.append ( entry )
 			self.splitPeriodsEntries[year] = tmpArr
-
+		return allEntries
 		
 	def overviewStatistics(self, data, statistics):
 
@@ -78,7 +78,7 @@ class WriteHtmlOutput:
 			totalSpentCategory = statistics['eachCategory']
 			htmlOutput = HTML()
 			
-			table = htmlOutput.table()
+			table = htmlOutput.table( style="width: 50%; padding-left: 20px" )
 
 			monthsArr  = [  "August", "September", "October", "November",
 							"December", "January" , "February" , "March" ,
@@ -118,7 +118,7 @@ class WriteHtmlOutput:
 					headerRow.td()
 					headerRow.td()
 				finalRow = table.tr
-				finalRow.td( "Total:" , style="background-color:lightgrey; text-align: right")
+				finalRow.td( "Total:" , style="text-align: right")
 				finalRow.td ( str ( totalSpentMonth[currMonth] ) + " lei", style="background-color:lightgrey; text-align: right")
 				finalRow = table.tr()
 				finalRow.td()
