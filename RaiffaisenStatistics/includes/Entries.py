@@ -122,18 +122,22 @@ class Entries(EntryNew):
                             if lastLabel != label.split(";")[0] and lastLabel != "":
                                 if not ( re.match ("^_", lastLabel) and re.match ("^_", label.split(";")[0])):
                                     labelSummary += "\t\n"
-                                    labelSummary += ("\t%s => %s lei \n" % ( "".ljust(20), str( totalLabel ).rjust(7)))
+                                    labelSummary += ("\t%s T:  %s lei \n" % ( "".ljust(20), str( totalLabel ).rjust(7)))
                                     labelSummary += "\t\n"
                                     
                                     totalLabel = 0
                             totalLabel += labelsPeriod[label]
                             
                             self.htmlFrame[currYear][currMonth][currPeriod]['labelSummary'].append( { label : labelsPeriod [label] } )
-                            
-                            labelSummary += ("\t%s => %s lei \n" % ( label.ljust(20), str( labelsPeriod[label]).rjust(7)))
+                            if labelsPeriod[label] != 0:
+                                labelSummary += ("\t%s => %s lei \n" % ( label.ljust(20), str( labelsPeriod[label] ).rjust(7)))
+                            else:
+                                labelSummary += ("\t%s    %s  -  \n" % ( label.ljust(20), "".rjust(7)))
+
+                                
                             lastLabel = label.split(";")[0]
                         labelSummary += "\t\n"
-                        labelSummary += ("\t%s => %s lei \n" % ( "".ljust(20), str( totalLabel ).rjust(7)))
+                        labelSummary += ("\t%s T:  %s lei \n" % ( "".ljust(20), str( totalLabel ).rjust(7)))
 
                            # print lastLabel + "\n"
                         #print otherOperations
@@ -243,7 +247,7 @@ class Entries(EntryNew):
                currRow = sh.row(rx)
                #validate rows
                if ( re.search ( "\d\d\/\d\d/\\d\d\d\d", str(currRow[0]) ) and
-                    re.search ( "\d\d\/\d\d/\\d\d\d\d", str(currRow[1]) )):
+                re.search ( "\d\d\/\d\d/\\d\d\d\d", str(currRow[1]) )):
    
                    (day, month, year) = str(currRow[1].value).split("/")
                    opDescription = currRow[11].value.split("|")[0]
@@ -268,7 +272,11 @@ class Entries(EntryNew):
    
                            self.newEntry( EntryNew( day, month, year, opDescription, creditValue, "_salary" ))
                        else:
-                           self.newEntry( EntryNew( day, month, year, opDescription, creditValue, "_transferredInto" ))
+                           whoTransfered = "_transferredInto"
+                           if re.search ( "dumitrescu mihail", opDescription.lower()):
+                               whoTransfered = "_transferredTata"
+                           print "%s: '%s'" % ( whoTransfered, opDescription )
+                           self.newEntry( EntryNew( day, month, year, opDescription, creditValue, whoTransfered ))
                    else:
                        self.errorString += "Warn: No debit or credit values! \n\t* Row is: currRow\n\n"
    
