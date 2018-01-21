@@ -121,8 +121,8 @@ class Entries(EntryNew):
                         for label in sorted( labelsPeriod ):
                             if lastLabel != label.split(";")[0] and lastLabel != "":
                                 if not ( re.match ("^_", lastLabel) and re.match ("^_", label.split(";")[0])):
-                                    labelSummary += "\t\n"
-                                    labelSummary += ("\t%s T:  %s lei \n" % ( "".ljust(20), str( totalLabel ).rjust(7)))
+                                    labelSummary += "\t---\n"
+                                    labelSummary += ("\tT:  %s lei \n" % ( str( totalLabel ).rjust(7)))
                                     labelSummary += "\t\n"
                                     
                                     totalLabel = 0
@@ -136,8 +136,8 @@ class Entries(EntryNew):
 
                                 
                             lastLabel = label.split(";")[0]
-                        labelSummary += "\t\n"
-                        labelSummary += ("\t%s T:  %s lei \n" % ( "".ljust(20), str( totalLabel ).rjust(7)))
+                        labelSummary += "\t---\n"
+                        labelSummary += ("\tT:  %s lei \n" % ( str( totalLabel ).rjust(7)))
 
                            # print lastLabel + "\n"
                         #print otherOperations
