@@ -24,20 +24,22 @@ class Statement(object):
 												"Rulaj creditor" : 0,
 												"Sold final" : 0
 											},
-								"content" : {
-												"Data inregistrare"  : "" ,
-												"Data tranzactiei" : "" ,
-												"Suma debit" : "" ,
-												"Suma credit" : "" ,
-												"Nr. OP" : "" ,
-												"Cod fiscal beneficiar" : "" ,
-												"Ordonator final" : "" ,
-												"Beneficiar final" : "" ,
-												"Nume/Denumire ordonator/beneficiar" : "" ,
-												"Denumire Banca ordonator/ beneficiar" : "" ,
-												"Nr. cont in/din care se efectueaza tranzactiile" : "" ,
-												"Descrierea tranzactiei" : "" 
-											}
+								"content" : [	
+												{		
+													"Data inregistrare"  : "" ,
+													"Data tranzactiei" : "" ,
+													"Suma debit" : "" ,
+													"Suma credit" : "" ,
+													"Nr. OP" : "" ,
+													"Cod fiscal beneficiar" : "" ,
+													"Ordonator final" : "" ,
+													"Beneficiar final" : "" ,
+													"Nume/Denumire ordonator/beneficiar" : "" ,
+													"Denumire Banca ordonator/ beneficiar" : "" ,
+													"Nr. cont in/din care se efectueaza tranzactiile" : "" ,
+													"Descrierea tranzactiei" : "" 
+												}
+											]
 							}
 						]
 
