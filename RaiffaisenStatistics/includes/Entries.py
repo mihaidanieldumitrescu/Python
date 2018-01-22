@@ -12,15 +12,17 @@ import json
 class Entries(EntryNew):
     
     def __init__(self, inputFile):
-        self.configFile = json.load(open(os.path.join ( "config", "definedLabels.json")))
+        self.configFile = json.load(open(os.path.join (os.environ['OneDrive'], "PythonData", "config", "definedLabels.json")))
          #another line graph, but with two data types. Also adding title
         self.currentYear = []
         #this is intermediary
         self.dictCurrentYear = {}
         #{year}{month}{period} => value
         self.statistics = {}
+        self.manualEntries = []
 
         self.htmlOutput = HTML()
+        self.htmlFrame = {}
         self.verbosity = "none" 
         self.pp = pprint.PrettyPrinter()
         self.errorMsg = ""
@@ -32,7 +34,7 @@ class Entries(EntryNew):
         self.extractDataXLS( inputFile )
         
     def __del__(self):
-                
+        #print json.dumps( self.htmlFrame )
         if self.debugOutput != "":
             print "(Entries) Debug output: \n\n" + self.debugOutput + "\n" 
 
@@ -64,8 +66,9 @@ class Entries(EntryNew):
         
         # each extracted key found in data array
         for currYear in sorted(keyYears):
+            self.htmlFrame[currYear] = {}
             for currMonth in sorted(keyMonth):
-                
+                self.htmlFrame[currYear][currMonth] = {}
                 monthStatistics = ""
                 bufferMonth = {
                                 "leftOtherOp" : [],
@@ -77,7 +80,10 @@ class Entries(EntryNew):
                 liquidationStatistics = []
                 advanceStatistics = []
                 for currPeriod in sorted( keyPeriods ):
-                    
+                    self.htmlFrame[currYear][currMonth][currPeriod] = {
+                                                                        'labelSummary' : [],
+                                                                        'otherOperations' : []
+                                                                      }
                     labelsPeriod = {}
                     otherOperations = currPeriod + " entries: \n\n"
                     labelSummary = ""
@@ -97,6 +103,7 @@ class Entries(EntryNew):
                                 # debug print str ( currEntry ) 
                                 labelsPeriod[currLabel] += currEntry.value
                                 if currEntry.label == "spent;other":
+                                    self.htmlFrame[currYear][currMonth][currPeriod]['otherOperations'].append( { currEntry.description : currEntry.value } )
                                     otherOperations += ( "%s - %s\n" % ( currEntry.description.ljust(30), ( str( currEntry.value) + " lei" ).ljust(10) ) )
                     
                     #print labels
@@ -110,13 +117,29 @@ class Entries(EntryNew):
                         print "%s, %s, %s" % ( currYear, currMonth, currPeriod )    
                         print '-' * 10 + "\n"
                         lastLabel = ""
+                        totalLabel = 0
                         for label in sorted( labelsPeriod ):
-                            if lastLabel != label.split(";")[0]:
+                            if lastLabel != label.split(";")[0] and lastLabel != "":
                                 if not ( re.match ("^_", lastLabel) and re.match ("^_", label.split(";")[0])):
-                                    labelSummary += "\n" 
-                            labelSummary += ("\t%s => %s lei \n" % ( label.ljust(20), labelsPeriod[label]))
-                            lastLabel = label.split(";")[0]
+                                    labelSummary += "\t\n"
+                                    labelSummary += ("\t%s T:  %s lei \n" % ( "".ljust(20), str( totalLabel ).rjust(7)))
+                                    labelSummary += "\t\n"
+                                    
+                                    totalLabel = 0
+                            totalLabel += labelsPeriod[label]
+                            
+                            self.htmlFrame[currYear][currMonth][currPeriod]['labelSummary'].append( { label : labelsPeriod [label] } )
+                            if labelsPeriod[label] != 0:
+                                labelSummary += ("\t%s => %s lei \n" % ( label.ljust(20), str( labelsPeriod[label] ).rjust(7)))
+                            else:
+                                labelSummary += ("\t%s    %s  -  \n" % ( label.ljust(20), "".rjust(7)))
 
+                                
+                            lastLabel = label.split(";")[0]
+                        labelSummary += "\t\n"
+                        labelSummary += ("\t%s T:  %s lei \n" % ( "".ljust(20), str( totalLabel ).rjust(7)))
+
+                           # print lastLabel + "\n"
                         #print otherOperations
                         #print labelSummary + "\n"
                         
@@ -184,6 +207,7 @@ class Entries(EntryNew):
                 #self.debugOutput = advanceStatistics.join()
                 print monthStatistics + "\n\n"
                 #self.pp.pprint( bufferMonth )
+        return self.htmlFrame
                     
     def retValuesDict(self):
         tempStr = ""
@@ -210,7 +234,9 @@ class Entries(EntryNew):
         self.dictCurrentYear[newEnt.month][newEnt.period].append(newEnt)
 
     def extractDataXLS(self, dirname):
-        files = glob.glob( os.path.join ( "extrasDeCont", "*xls"))
+        files = glob.glob( os.path.join ( os.environ['OneDrive'], "PythonData" ,"extrasDeCont", "*xls"))
+        if len ( files ) == 0:
+            print "No files found in folder \n"
         for filename in files:
     
            print "trying to open " + filename
@@ -221,7 +247,7 @@ class Entries(EntryNew):
                currRow = sh.row(rx)
                #validate rows
                if ( re.search ( "\d\d\/\d\d/\\d\d\d\d", str(currRow[0]) ) and
-                    re.search ( "\d\d\/\d\d/\\d\d\d\d", str(currRow[1]) )):
+                re.search ( "\d\d\/\d\d/\\d\d\d\d", str(currRow[1]) )):
    
                    (day, month, year) = str(currRow[1].value).split("/")
                    opDescription = currRow[11].value.split("|")[0]
@@ -246,7 +272,11 @@ class Entries(EntryNew):
    
                            self.newEntry( EntryNew( day, month, year, opDescription, creditValue, "_salary" ))
                        else:
-                           self.newEntry( EntryNew( day, month, year, opDescription, creditValue, "_transferredInto" ))
+                           whoTransfered = "_transferredInto"
+                           if re.search ( "dumitrescu mihail", opDescription.lower()):
+                               whoTransfered = "_transferredTata"
+                           print "%s: '%s'" % ( whoTransfered, opDescription )
+                           self.newEntry( EntryNew( day, month, year, opDescription, creditValue, whoTransfered ))
                    else:
                        self.errorString += "Warn: No debit or credit values! \n\t* Row is: currRow\n\n"
    
