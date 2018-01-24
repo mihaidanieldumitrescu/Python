@@ -7,7 +7,7 @@ import sys
 
 if len ( sys.argv ) > 1:
 	if sys.argv[1] == "olx":
-		obj = Olx()
+		obj = Olx( sys.argv[2] )
 	elif sys.argv[1] == "iabilet":
 		obj = iaBilet()
 	else:
