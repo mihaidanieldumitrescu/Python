@@ -12,7 +12,9 @@ class Olx(object):
 
 	def loadProducts (self, productName):
 
-		url = "https://www.olx.ro/oferta/q-" + productName + "/"
+		url = "https://www.olx.ro/oferte/q-" + productName + "/"
+		sortByDesc = "?search%5Border%5D=filter_float_price%3Adesc"
+		url += sortByDesc
 		#url = "https://www.olx.ro/oferte/q-asus-transformer/"
 		while url != "":
 
@@ -38,8 +40,7 @@ class Olx(object):
 			    priceArr = ( link.find_all( 'p', { "class" : "price"}))
 			    if priceArr[0]:
 			    	productPrice = priceArr[0].strong.string
-				print { "desc" : productTitle, "price" : productPrice }
-			    self.products.append({ "desc" : productTitle, "price" : productPrice })
+				self.products.append({ "desc" : productTitle, "price" : productPrice })
 
 			lastPage = soup.find_all ("div", { "class": "pager rel clr"})
 			#print lastPage
@@ -56,5 +57,10 @@ class Olx(object):
 			    except ValueError:
 				print "Error in link next page\n\n %s \n" % ( linkNextPage ) 
 				print ValueError
+			
+			print "Done extracting ..."
+			
+		for product in self.products:
+			print "%s %s" % ( product['price'].ljust(10), product['desc'] )
 
 			#print str ( linkNextPage )
