@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 from datetime import datetime,timedelta
+from Results import Results, ResultObject
 
 import sys
 import os
@@ -90,3 +91,8 @@ class iaBilet:
 				
 
 		return dates
+
+class IaBiletObject (ResultObject):
+	def __init__(self, description, link):
+		ResultObject.__init__(self, description, link )
+		self.siteName = "Travelator"
