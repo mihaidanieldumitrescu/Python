@@ -207,7 +207,6 @@ class Entries(EntryNew):
                 #self.debugOutput = advanceStatistics.join()
                 print monthStatistics + "\n\n"
                 #self.pp.pprint( bufferMonth )
-        return self.htmlFrame
                     
     def retValuesDict(self):
         tempStr = ""
@@ -295,7 +294,41 @@ class Entries(EntryNew):
                     return "%s;%s" % (labelCat, label)
 
         return "spent;other"
-    
+    def writeHtmlReport(self):
+        htmlOutput = HTML()
+        table = htmlOutput.table()
+        for year in sorted ( self.htmlFrame ,reverse=True):
+            print "%s" % (year)
+            tr = table.tr
+            tr.td (str(year))
+            for month in sorted ( self.htmlFrame[year] ,reverse=True):
+ 
+                tr = table.tr
+                tr.td (str(month))
+                tr_per = table.tr
+ 
+                           
+                dictLiq = self.htmlFrame[year][month]['liquidation']
+                dictAdv = self.htmlFrame[year][month]['advance']
+ 
+                for entryLiq, entryAdv in zip ( dictLiq['labelSummary'],dictAdv['labelSummary']):
+                    tr_nr = table.tr
+                    for key in entryLiq:
+                        tr_nr.td (str(key))
+                        tr_nr.td (str(entryLiq[key]))
+                        
+                    for key in entryAdv:
+                        tr_nr.td (str(key))
+                        tr_nr.td (str(entryAdv[key]))
+                        
+                    #for entry in dictCurr['otherOperations']:
+                        #tr_per.td (str(entry))
+ 
+                
+        with open ("report.html", "w") as f:
+            f.write(str (htmlOutput))
+            
+            
     def loadDebugValues(self):
         if 0:
             self.currentYear.append ( EntryNew('liquidation', "1", 2017, "Drinks all night", '273', 'fun') )

@@ -15,6 +15,7 @@ class Operations:
         self.totalSpentMonth = {}
         self.verbosity = verbosity
         self.entries.printStatistics()
+        self.entries.writeHtmlReport()
         
     def __del__(self):
 
