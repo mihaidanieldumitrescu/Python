@@ -17,19 +17,34 @@ class Travelator:
 		self.res = Results()
 		self.debug = 1
 		self.debugFlags = { "loadTitles": 0 ,"callPushbullet" : 1, "addToJson" : 0 }
-		self.run()
-		
+
 	def run(self):
 		
 		self.printResult()
 		
-
+	def filter(self):
+		filterDict = {}
+		vacations = self.loadTitles()
+		with open( os.path.join (os.environ['OneDrive'], "PythonData", "config", "globalSearch.json")) as jsonFile:
+			filterDict = json.load( jsonFile )
+			
+		if filterDict['Travelator']:
+			for keyword in  filterDict['Travelator']['keywords']:
+				print "Looking for {}  ...\n". format( keyword )
+				for ( country, title, link) in vacations:
+					print "Current country: '{}' ".format (country)
+					if keyword in country:
+						if filterDict['Travelator']['notification'] == 'on':
+							description = "Jackpot! Vacation in '%s' found!\n\n  Link: %s" %  ( country, link )
+							travObj = TravelatorObject( description, link )
+							self.pb.pushSomething( travObj )	
+			
 	def printResult(self):
 	
 		for ( country,title, link) in self.loadTitles():
 			if country != "":
 				if self.debug:
-					print "Found new item! Adding it to db ...\n" 
+					print "Found '{}'! sending it to db ...\n".format (country)
 				isNewEntry = self.res.insertItem( SITE_NAME, [ country, title, link ] )
 				if isNewEntry:
 
@@ -38,7 +53,7 @@ class Travelator:
 					print item
 					if (  not self.debug or self.debugFlags['callPushbullet'] ):
 						self.pb.pushSomething( item )
- 
+						
 	def loadTitles (self):
 
 		url = "http://www.travelator.ro"

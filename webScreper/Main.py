@@ -13,6 +13,8 @@ if len ( sys.argv ) > 1:
 		obj = iaBilet()
 	elif sys.argv[1] == "travelator":
 		obj = Travelator()
+		obj.loadTitles()
+		obj.filter()
 	else:
 		print "Unknown parameter!"
 else:
