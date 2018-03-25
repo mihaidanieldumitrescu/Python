@@ -26,6 +26,8 @@ class Olx(object):
 		
 		#sortByDesc = "?search%5Border%5D=filter_float_price%3Adesc"
 		#url = sortByDesc
+		fail = 0
+		pages = 0
 		url = "https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/?search%5Bfilter_float_price%3Afrom%5D=600&search%5Bfilter_float_price%3Ato%5D=1400"
 		#url = "https://www.olx.ro/oferte/q-asus-transformer/"
 		while url != "":
@@ -42,16 +44,20 @@ class Olx(object):
 			soup = BeautifulSoup(content, 'lxml')
 			url = ""
 			
-			frames = soup.div.find_all('tr', {"class" : "wrap"})
+			frames = soup.find_all('tr', {"class" : "wrap"})
 			if len ( frames ) == 0:
-				print "Error: Either link is wrong or something changed in page structure!\n\n"
-				print soup
+				fail = 1
+				with open ("dump_{}.html".format(pages), "w") as f:
+					f.write (str(soup))
+				pages += 1
+			
 			for link in frames:
 			    productTitle = link.strong.string 
 			    productPrice = ""
 			    priceArr = ( link.find_all( 'p', { "class" : "price"}))
 			    if len ( priceArr):
-			        productPrice = priceArr[0].strong.string
+			        productPrice = int ( priceArr[0].strong.string.encode('utf-8').replace(' \xe2\x82\xae','').replace(' \xe2\x82\xac','').replace(' ' ,'') )
+ 
 			    else:
 			        productPrice = -1
 			    self.products.append( [ productTitle, productPrice ] )
@@ -78,7 +84,8 @@ class Olx(object):
 					print ValueError
 				self.limitPages -= 1
 			print "Done extracting ...\n\n Found a number of {} pages and a total of {} items ".format(self.pagesIndex,len(self.products))
-			
+		if fail:
+			print "Error: Either link is wrong or something changed in page structure!\n\n"
 	def getNextPage(self, lastPage):
 		pass
 	
@@ -114,10 +121,16 @@ class OlxCars( Olx ):
 				for productDesc in self.products:
 					if carModel in productDesc[0].lower():
 						sortedList.append ( [ self.filterDesc( productDesc[0]), productDesc[1]])
-						self.statistics[carModel]['prices'].append ( productDesc[1] )
+						self.statistics[carModel]['prices'].append ( productDesc[1]  )
+						self.statistics[carModel]['prices'] = sorted ( self.statistics[carModel]['prices'] )
 						self.statistics[carModel]['occurences'] += 1
 					else:
 						otherCars.append ( [ self.filterDesc( productDesc[0]), productDesc[1]])
+				tmpSum = 0
+				for price in self.statistics[carModel]['prices']:
+					tmpSum += int(  price  )
+				if len ( self.statistics[carModel]['prices'] ) :
+					self.statistics[carModel]['average'] = tmpSum / len ( self.statistics[carModel]['prices'] )
 		sortedList.append (otherCars)
 		self.pp.pprint( sortedList )
 		self.pp.pprint (self.statistics)
@@ -127,6 +140,7 @@ class OlxCars( Olx ):
 			f.write ( json.dumps(self.products,sort_keys=True, indent=4 ) )
 		with open ("olxCarStatistics.json", "w") as f:
 			f.write ( json.dumps(self.statistics,sort_keys=True, indent=4 ) )
+		print "OBS: Where are the Other car category?\n\n"
 			
 	def filterDesc(self, description):
 		filterWords = [ 'vind', 'vand', 'cumpar', 'schimb', 'masina' , 'cu' , 'oferta', 'pret', 'sau' ]
@@ -135,3 +149,5 @@ class OlxCars( Olx ):
 			if not word.lower() in filterWords:
 				finalString += word + " "
 		return finalString
+	
+ 
