@@ -37,10 +37,9 @@ class EntryNew:
                 self.period = "advance"    
             else:
                 return "Error: Period must be either 'liquidation' or 'advance'"
-            
-        if ( re.match ( "[a-zA-Z]+", month) ):
+        if ( re.match ( "[a-zA-Z]+", str ( month ) ) ):
             self.month = month
-        elif ( ( re.match ( "[0-9]+", month) )):
+        elif ( ( re.match ( "[0-9]+", str ( month ) ) )):
             month = int ( month )
             if month > 0 and month <= 12:      
                 self.month = month

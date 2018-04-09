@@ -20,6 +20,7 @@ class Entries(EntryNew):
         #{year}{month}{period} => value
         self.statistics = {}
         self.manualEntries = []
+        self.csvValues = ""
 
         self.htmlOutput = HTML()
         self.htmlFrame = {}
@@ -55,7 +56,8 @@ class Entries(EntryNew):
             print str( entry )
     
     def printStatistics(self):
-        #how do I convert array to hash?
+        
+        # generate a dict out of all extracted values which will be used to iterate the main dict
         
         ( keyYears, keyMonth, keyPeriods, keyLabels ) = ( {}, {}, {}, {})
         for entryNewItem in self.currentYear:
@@ -67,7 +69,9 @@ class Entries(EntryNew):
         # each extracted key found in data array
         for currYear in sorted(keyYears):
             self.htmlFrame[currYear] = {}
+            
             for currMonth in sorted(keyMonth):
+                
                 self.htmlFrame[currYear][currMonth] = {}
                 monthStatistics = ""
                 bufferMonth = {
@@ -79,6 +83,14 @@ class Entries(EntryNew):
                 tmpStatistics = ""
                 liquidationStatistics = []
                 advanceStatistics = []
+                totalMonth = 0
+                totalMonthByLabel = {}
+                # first initialisation
+                for label in keyLabels:
+                    key = label.split(';')[0]
+                    if not re.match ("_", key):
+                        totalMonthByLabel[key] = 0
+                # for advance and liquidation
                 for currPeriod in sorted( keyPeriods ):
                     self.htmlFrame[currYear][currMonth][currPeriod] = {
                                                                         'labelSummary' : [],
@@ -103,12 +115,16 @@ class Entries(EntryNew):
                                 # debug print str ( currEntry ) 
                                 labelsPeriod[currLabel] += currEntry.value
                                 if currEntry.label == "spent;other":
-                                    self.htmlFrame[currYear][currMonth][currPeriod]['otherOperations'].append( { currEntry.description : currEntry.value } )
-                                    otherOperations += ( "%s - %s\n" % ( currEntry.description.ljust(30), ( str( currEntry.value) + " lei" ).ljust(10) ) )
+                                    self.htmlFrame[currYear][currMonth][currPeriod]['otherOperations'].append (
+                                        { currEntry.description : currEntry.value } )
+                                    otherOperations += ( "%s - %s\n" % ( currEntry.description.ljust(30),
+                                                                        ( str( currEntry.value) + " lei" ).ljust(10) ) )
                     
-                    #print labels
                     hasData = 0
                     for label in sorted( labelsPeriod ):
+                        
+                        # bills;internet       => -109.59 lei
+                        # at least one label has value
                         if labelsPeriod[label] != 0:
                             hasData = 1
             
@@ -119,16 +135,20 @@ class Entries(EntryNew):
                         lastLabel = ""
                         totalLabel = 0
                         for label in sorted( labelsPeriod ):
+                            # if bills != food
                             if lastLabel != label.split(";")[0] and lastLabel != "":
                                 if not ( re.match ("^_", lastLabel) and re.match ("^_", label.split(";")[0])):
                                     labelSummary += "\t---\n"
-                                    labelSummary += ("\tT:  %s lei \n" % ( str( totalLabel ).rjust(7)))
+                                    labelSummary += ("\t%s:  %s lei \n" % ( lastLabel, str(totalLabel ).rjust(7)))
                                     labelSummary += "\t\n"
-                                    
+                                    if not re.match ("_", lastLabel):
+                                        totalMonth += totalLabel
+                                        totalMonthByLabel[lastLabel] += totalLabel
                                     totalLabel = 0
                             totalLabel += labelsPeriod[label]
                             
-                            self.htmlFrame[currYear][currMonth][currPeriod]['labelSummary'].append( { label : labelsPeriod [label] } )
+                            self.htmlFrame[currYear][currMonth][currPeriod]['labelSummary'].append (
+                                { label : labelsPeriod [label] } )
                             if labelsPeriod[label] != 0:
                                 labelSummary += ("\t%s => %s lei \n" % ( label.ljust(20), str( labelsPeriod[label] ).rjust(7)))
                             else:
@@ -136,9 +156,15 @@ class Entries(EntryNew):
 
                                 
                             lastLabel = label.split(";")[0]
+                            
+                        # for the last label (no more labels to compare)
                         labelSummary += "\t---\n"
-                        labelSummary += ("\tT:  %s lei \n" % ( str( totalLabel ).rjust(7)))
-
+                        labelSummary += ("\t%s:  %s lei \n" % ( lastLabel, str(  totalLabel ).rjust(7)))
+                        totalMonth += totalLabel
+                        totalMonthByLabel[lastLabel] += totalLabel
+                        
+                        for label in sorted (totalMonthByLabel):
+                            self.csvValues += "{};{};{};{}\n".format ( currYear,currMonth,label, totalMonthByLabel[label] )
                            # print lastLabel + "\n"
                         #print otherOperations
                         #print labelSummary + "\n"
@@ -186,6 +212,7 @@ class Entries(EntryNew):
                             print "delta values are: '%s' '%s' \n" % (deltaOtherOp, deltaLabels)
                 # after each month print results
                 
+                
                 if 0:
                     print "len values: %s %s \n" % (len ( bufferMonth['leftOtherOp'] ), len ( bufferMonth['rightOtherOp'] ))                    
                     self.pp.pprint ( bufferMonth['leftOtherOp'] )
@@ -205,7 +232,10 @@ class Entries(EntryNew):
                                                           bufferMonth['rightOtherOp'].pop().ljust(columnSize) )) 
 
                 #self.debugOutput = advanceStatistics.join()
-                print monthStatistics + "\n\n"
+                print monthStatistics + "\n"
+                
+                if totalMonth != 0:
+                    print "\t---\n\tMonth total spent: {}\n\n".format( totalMonth )
                 #self.pp.pprint( bufferMonth )
                     
     def retValuesDict(self):
@@ -214,8 +244,11 @@ class Entries(EntryNew):
             for period in self.dictCurrentYear[month]:
                 for entry in self.dictCurrentYear[month][period]:
                     tempStr += str ( entry )
-        return tempStr 
-
+        return tempStr
+    
+    def iterateByDate (self):
+        pass
+    
     def getEntriesFor(self, period, month):
 
         # print "Looking for entries for month '" + month + "' and period '" + period + "' :\n"	
@@ -264,7 +297,7 @@ class Entries(EntryNew):
                    
                    #self, period="undef", month=-1, year=-1, description.lower()="undef", value=-1, label="undef"
                    if debitValue:
-                       self.newEntry( EntryNew( day, month, year, opDescription, debitValue, labelStr ))               
+                       self.newEntry( EntryNew( day, month, year, opDescription, - (debitValue), labelStr ))               
                    elif creditValue:
                        #print "credit: %s : %s \n" % ( opDescription, creditValue )
                        if re.search( self.configFile['salaryFirmName'], currRow[8].value, re.IGNORECASE):
@@ -328,13 +361,16 @@ class Entries(EntryNew):
         with open ("report.html", "w") as f:
             f.write(str (htmlOutput))
             
+    def writeCSVdata(self):
+        with open ("report.csv", "w") as f:
+            f.write ( self.csvValues )
             
     def loadDebugValues(self):
-        if 0:
-            self.currentYear.append ( EntryNew('liquidation', "1", 2017, "Drinks all night", '273', 'fun') )
-            self.currentYear.append ( EntryNew('advance', "2", 2017, "Drinks all night", '153', 'fun') )
-            self.currentYear.append ( EntryNew('liquidation', 2, 2017, "Girls night!", '457', 'fun') )
-            self.currentYear.append ( EntryNew('liquidation', 2, 2017, "Girls night!", '846', 'fun') )
-            self.currentYear.append ( EntryNew('advance', 3, 2017, "Boys night", '121', 'fun') )
-            self.currentYear.append ( EntryNew('advance', 3, 2017, "Cinema", '121', 'movies') )
-            self.currentYear.append ( EntryNew('advance', 3, 2017, "Popcorn", '121', 'movies') )
+
+        self.currentYear.append ( EntryNew('liquidation', 1, 2017, "Drinks all night", 273, 'fun') )
+        self.currentYear.append ( EntryNew('advance', 2, 2017, "Drinks all night", 153, 'fun') )
+        self.currentYear.append ( EntryNew('liquidation', 2, 2017, "Girls night", 457, 'fun') )
+        self.currentYear.append ( EntryNew('liquidation', 2, 2017, "Girls night", 846, 'fun') )
+        self.currentYear.append ( EntryNew('advance', 3, 2017, "Boys night", 121, 'fun') )
+        self.currentYear.append ( EntryNew('advance', 3, 2017, "Cinema", 121, 'movies') )
+        self.currentYear.append ( EntryNew('advance', 3, 2017, "Popcorn", 121, 'movies') )
