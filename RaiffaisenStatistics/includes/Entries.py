@@ -163,8 +163,6 @@ class Entries(EntryNew):
                         totalMonth += totalLabel
                         totalMonthByLabel[lastLabel] += totalLabel
                         
-                        for label in sorted (totalMonthByLabel):
-                            self.csvValues += "{};{};{};{}\n".format ( currYear,currMonth,label, totalMonthByLabel[label] )
                            # print lastLabel + "\n"
                         #print otherOperations
                         #print labelSummary + "\n"
@@ -236,6 +234,10 @@ class Entries(EntryNew):
                 
                 if totalMonth != 0:
                     print "\t---\n\tMonth total spent: {}\n\n".format( totalMonth )
+                    for label in sorted (totalMonthByLabel):
+                        self.csvValues += "{};{};{};{}\n".format ( currYear,currMonth,label, totalMonthByLabel[label] )
+                    
+
                 #self.pp.pprint( bufferMonth )
                     
     def retValuesDict(self):
