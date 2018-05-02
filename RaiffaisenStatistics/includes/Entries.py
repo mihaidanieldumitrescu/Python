@@ -2,6 +2,8 @@ from EntryNew import EntryNew
 
 from html import HTML
 
+from RaiffaisenStatement import Statement
+
 import xlrd
 import glob
 import pprint
@@ -21,6 +23,8 @@ class Entries(EntryNew):
         self.statistics = {}
         self.manualEntries = []
         self.csvValues = ""
+        
+        self.dataVerification = []
 
         self.htmlOutput = HTML()
         self.htmlFrame = {}
@@ -40,7 +44,9 @@ class Entries(EntryNew):
             print "(Entries) Debug output: \n\n" + self.debugOutput + "\n" 
 
         if self.errorMsg != "":
-            print "(Entries) Errors found: \n\n" + self.errorMsg + "\n" 
+            print "(Entries) Errors found: \n\n" + self.errorMsg + "\n"
+            
+        self.pp.pprint( self.dataVerification )
         
     def __str__(self):
         tmp = ""
@@ -271,29 +277,28 @@ class Entries(EntryNew):
         files = glob.glob( os.path.join ( os.environ['OneDrive'], "PythonData" ,"extrasDeCont", "*xls"))
         if len ( files ) == 0:
             print "No files found in folder \n"
+        
         for filename in files:
-    
-           print "trying to open " + filename
-           book = xlrd.open_workbook( filename )
-           sh = book.sheet_by_index(0)
-           for rx in range(sh.nrows):
-               index = 0
-               currRow = sh.row(rx)
-               #validate rows
-               if ( re.search ( "\d\d\/\d\d/\\d\d\d\d", str(currRow[0]) ) and
-                re.search ( "\d\d\/\d\d/\\d\d\d\d", str(currRow[1]) )):
-   
-                   (day, month, year) = str(currRow[1].value).split("/")
-                   opDescription = currRow[11].value.split("|")[0]
-                   if re.search("^OPIB", currRow[11].value):
-                      opDescription = currRow[11].value.split("|")[1]
-                   debitValue = currRow[2].value
-                   creditValue = currRow[3].value
+           
+           statement = Statement ( )
+           statement.loadStatement ( filename )
+           
+           self.dataVerification.append ( "{}-{}".format ( statement.data['headers']['Data generare extras'].split("/")[2],
+                                                      statement.data['headers']['Data generare extras'].split("/")[1] ) )
+           self.dataVerification = sorted ( self.dataVerification )
+           for operation in statement.data['operations']:
+                    
+                   (day, month, year) = operation['Data tranzactiei'].split("/")
+                   opDescription = operation['Descrierea tranzactiei'].split("|")[0]
+                   if re.match("OPIB", operation['Descrierea tranzactiei']):
+                      opDescription = operation['Descrierea tranzactiei'].split("|")[1]
+                   debitValue = operation['Suma debit']
+                   creditValue = operation['Suma credit']
                    labelStr = self.labelMe( opDescription )
    
                    data = ( "  Data: %s Operatie: %s Eticheta: %s\n " +
-                            "  Valoare debit: %s Valoare credit: %s\n") % (currRow[1].value,  opDescription, self.labelMe( opDescription ),
-                                                                         debitValue,  creditValue )
+                            "  Valoare debit: %s Valoare credit: %s\n") % ( operation['Data tranzactiei'],  opDescription, self.labelMe( opDescription ),
+                                                                         debitValue,  creditValue )    
                    if self.verbosity == "high":
                        print data
                    
@@ -302,7 +307,7 @@ class Entries(EntryNew):
                        self.newEntry( EntryNew( day, month, year, opDescription, - (debitValue), labelStr ))               
                    elif creditValue:
                        #print "credit: %s : %s \n" % ( opDescription, creditValue )
-                       if re.search( self.configFile['salaryFirmName'], currRow[8].value, re.IGNORECASE):
+                       if re.search( self.configFile['salaryFirmName'], operation['Nume/Denumire ordonator/beneficiar'], re.IGNORECASE):
    
                            self.newEntry( EntryNew( day, month, year, opDescription, creditValue, "_salary" ))
                        else:
@@ -313,11 +318,8 @@ class Entries(EntryNew):
                            self.newEntry( EntryNew( day, month, year, opDescription, creditValue, whoTransfered ))
                    else:
                        self.errorString += "Warn: No debit or credit values! \n\t* Row is: currRow\n\n"
-   
-               else:
-                   #these are the rows we are not interested in
-                   pass
-
+           
+           #self.pp.pprint ( statement.data )
 
     def labelMe(self, description):
 
