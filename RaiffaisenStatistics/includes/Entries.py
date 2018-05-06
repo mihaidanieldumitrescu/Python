@@ -236,7 +236,8 @@ class Entries(EntryNew):
                                                           bufferMonth['rightOtherOp'].pop().ljust(columnSize) )) 
 
                 #self.debugOutput = advanceStatistics.join()
-                print monthStatistics + "\n"
+                if monthStatistics != "":
+                    print monthStatistics + "\n"
                 
                 if totalMonth != 0:
                     print "\t---\n\tMonth total spent: {}\n\n".format( totalMonth )

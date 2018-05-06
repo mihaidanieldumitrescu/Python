@@ -88,6 +88,11 @@ class Statement(object):
 			elif rx >= 18:
 				
 				if len ( currRow[1].value.split('/') ) == 3:
+					cardCF = ""
+
+					if re.search ( r'5244$', currRow[10].value ) and re.search ( "dumitrescu", currRow[8].value, re.IGNORECASE):
+						cardCF = "Rata Card Cumparaturi|"
+					
 					self.data['operations'].append ( {
 					
 									"Data inregistrare"  : currRow[0].value ,
@@ -95,7 +100,7 @@ class Statement(object):
 									"Suma debit" : currRow[2].value  ,
 									"Suma credit" : currRow[3].value ,
 									"Nume/Denumire ordonator/beneficiar" : currRow[8].value,
-									"Descrierea tranzactiei" : currRow[11].value
+									"Descrierea tranzactiei" : cardCF + currRow[11].value 
 								} )
 
 		#self.pp.pprint (self.data)
@@ -103,13 +108,11 @@ class Statement(object):
 		sold = float ( self.data['rulaj']['Sold initial'] )
 		if self.data['rulaj'].has_key ('Valoare plafon descoperit de cont') :
 			sold += float ( self.data['rulaj']['Valoare plafon descoperit de cont'])
-			print "overdraft added to sold\n"
 			
 		for operatie in self.data['operations']:
 			if re.search ( "luxoft|harman", operatie ['Nume/Denumire ordonator/beneficiar'], re.IGNORECASE ):
 				break
 			if operatie ['Suma debit'] != '' :
-				#print "op: '{}'".format ( operatie ['Suma debit'] )
 				sold -= float ( operatie['Suma debit'] )
 		return sold
 
