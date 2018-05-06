@@ -46,7 +46,7 @@ class Entries(EntryNew):
         if self.errorMsg != "":
             print "(Entries) Errors found: \n\n" + self.errorMsg + "\n"
             
-        self.pp.pprint( self.dataVerification )
+        #self.pp.pprint( self.dataVerification )
         
     def __str__(self):
         tmp = ""
@@ -286,8 +286,12 @@ class Entries(EntryNew):
            self.dataVerification.append ( "{}-{}".format ( statement.data['headers']['Data generare extras'].split("/")[2],
                                                       statement.data['headers']['Data generare extras'].split("/")[1] ) )
            self.dataVerification = sorted ( self.dataVerification )
+           if len  ( statement.data['headers']['Data generare extras'].split("/") ) == 3:
+                   (day, month, year) = statement.data['headers']['Data generare extras'].split("/")
+           self.newEntry( EntryNew( day, month, "20{}".format ( year ) , "sold precendent", statement.soldPrecendent(), "_soldPrecendent" ))
            for operation in statement.data['operations']:
                     
+
                    (day, month, year) = operation['Data tranzactiei'].split("/")
                    opDescription = operation['Descrierea tranzactiei'].split("|")[0]
                    if re.match("OPIB", operation['Descrierea tranzactiei']):
