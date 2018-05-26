@@ -14,7 +14,7 @@ import json
 class Entries(EntryNew):
     
     def __init__(self, inputFile):
-        self.configFile = json.load(open(os.path.join (os.environ['OneDrive'], "PythonData", "config", "definedLabels.json")))
+        self.configDict = {}
          #another line graph, but with two data types. Also adding title
         self.currentYear = []
         #this is intermediary
@@ -142,19 +142,27 @@ class Entries(EntryNew):
                         totalLabel = 0
                         for label in sorted( labelsPeriod ):
                             # if bills != food
-                            if lastLabel != label.split(";")[0] and lastLabel != "":
-                                if not ( re.match ("^_", lastLabel) and re.match ("^_", label.split(";")[0])):
-                                    labelSummary += "\t---\n"
-                                    labelSummary += ("\t%s:  %s lei \n" % ( lastLabel, str(totalLabel ).rjust(7)))
-                                    labelSummary += "\t\n"
+                            currLabelCategory = label.split(";")[0]
+                            switchLabel = ''
+                            if lastLabel != currLabelCategory and lastLabel != "":
+                                if not ( re.match ("^_", lastLabel) and re.match ("^_", currLabelCategory)):
+                                    if re.match ( "_", lastLabel ):
+                                        switchLabel = '_income'
+                                    else:
+                                        switchLabel = lastLabel
+                                    labelSummary += ( "\t---\n" +
+                                                      "\t%s:  %s lei \n" % ( switchLabel, str( totalLabel ).rjust(7)) +
+                                                      "\t\n" )
                                     if not re.match ("_", lastLabel):
                                         totalMonth += totalLabel
                                         totalMonthByLabel[lastLabel] += totalLabel
                                     totalLabel = 0
+                                else:
+                                    pass # print "Exception in lastlabel '{}' !".format ( lastLabel )
                             totalLabel += labelsPeriod[label]
                             
-                            self.htmlFrame[currYear][currMonth][currPeriod]['labelSummary'].append (
-                                { label : labelsPeriod [label] } )
+                            self.htmlFrame[currYear][currMonth][currPeriod]['labelSummary'].append ( { label : labelsPeriod [label] } )
+                            
                             if labelsPeriod[label] != 0:
                                 labelSummary += ("\t%s => %s lei \n" % ( label.ljust(20), str( labelsPeriod[label] ).rjust(7)))
                             else:
@@ -165,7 +173,7 @@ class Entries(EntryNew):
                             
                         # for the last label (no more labels to compare)
                         labelSummary += "\t---\n"
-                        labelSummary += ("\t%s:  %s lei \n" % ( lastLabel, str(  totalLabel ).rjust(7)))
+                        labelSummary += ("\t%s:  %s lei \n" % ( lastLabel, str ( totalLabel ).rjust(7)))
                         totalMonth += totalLabel
                         totalMonthByLabel[lastLabel] += totalLabel
                         
@@ -276,6 +284,10 @@ class Entries(EntryNew):
 
     def extractDataXLS(self, dirname):
         files = glob.glob( os.path.join ( os.environ['OneDrive'], "PythonData" ,"extrasDeCont", "*xls"))
+        
+        with open ( os.path.join ( os.environ['OneDrive'], "PythonData", "config", "definedLabels.json") )  as f:
+            self.configDict = json.load( f )
+            
         if len ( files ) == 0:
             print "No files found in folder \n"
         
@@ -312,7 +324,7 @@ class Entries(EntryNew):
                        self.newEntry( EntryNew( day, month, year, opDescription, - (debitValue), labelStr ))               
                    elif creditValue:
                        #print "credit: %s : %s \n" % ( opDescription, creditValue )
-                       if re.search( self.configFile['salaryFirmName'], operation['Nume/Denumire ordonator/beneficiar'], re.IGNORECASE):
+                       if re.search( self.configDict['salaryFirmName'], operation['Nume/Denumire ordonator/beneficiar'], re.IGNORECASE):
    
                            self.newEntry( EntryNew( day, month, year, opDescription, creditValue, "_salary" ))
                        else:
@@ -328,7 +340,7 @@ class Entries(EntryNew):
 
     def labelMe(self, description):
 
-        labelDict = self.configFile['labelDict']
+        labelDict = self.configDict['labelDict']
         
         for labelCat in labelDict:
             for label in labelDict [ labelCat ]:    
