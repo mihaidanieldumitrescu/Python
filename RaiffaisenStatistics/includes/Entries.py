@@ -141,10 +141,10 @@ class Entries(EntryNew):
                         lastLabel = ""
                         totalLabel = 0
                         for label in sorted( labelsPeriod ):
-                            # if bills != food
+
                             currLabelCategory = label.split(";")[0]
                             switchLabel = ''
-                            if lastLabel != currLabelCategory and lastLabel != "":
+                            if lastLabel != currLabelCategory and lastLabel != "":    # if 'bills != food', when you get to the next category
                                 if not ( re.match ("^_", lastLabel) and re.match ("^_", currLabelCategory)):
                                     if re.match ( "_", lastLabel ):
                                         switchLabel = '_income'
@@ -153,6 +153,9 @@ class Entries(EntryNew):
                                     labelSummary += ( "\t---\n" +
                                                       "\t%s:  %s lei \n" % ( switchLabel, str( totalLabel ).rjust(7)) +
                                                       "\t\n" )
+                                    
+                                    # do not add input from income in month statistics
+                                    
                                     if not re.match ("_", lastLabel):
                                         totalMonth += totalLabel
                                         totalMonthByLabel[lastLabel] += totalLabel
@@ -199,7 +202,7 @@ class Entries(EntryNew):
                             self.errorMsg += ( "Error: Label '" + currPeriod + "' should not exist! \n\n " +
                                                otherOperations + labelSummary + "\n"
                                               )
-                        # balance elemnts -> equal number of elemnts left and right 
+                        # balance elements -> equal number of elemnts left and right 
                         deltaOtherOp = int ( len ( bufferMonth['leftOtherOp']) - len (bufferMonth['rightOtherOp']) )
                         deltaLabels =  int ( len ( bufferMonth['leftLabels'] ) - len (bufferMonth['rightLabels'])  )
                         
@@ -348,6 +351,7 @@ class Entries(EntryNew):
                     return "%s;%s" % (labelCat, label)
 
         return "spent;other"
+    
     def writeHtmlReport(self):
         htmlOutput = HTML()
         table = htmlOutput.table()
@@ -355,7 +359,7 @@ class Entries(EntryNew):
             print "%s" % (year)
             tr = table.tr
             tr.td (str(year))
-            for month in sorted ( self.htmlFrame[year] ,reverse=True):
+            for month in sorted ( self.htmlFrame[year], reverse=True ):
  
                 tr = table.tr
                 tr.td (str(month))
@@ -365,7 +369,7 @@ class Entries(EntryNew):
                 dictLiq = self.htmlFrame[year][month]['liquidation']
                 dictAdv = self.htmlFrame[year][month]['advance']
  
-                for entryLiq, entryAdv in zip ( dictLiq['labelSummary'],dictAdv['labelSummary']):
+                for entryLiq, entryAdv in zip ( dictLiq['labelSummary'], dictAdv['labelSummary']):
                     tr_nr = table.tr
                     for key in entryLiq:
                         tr_nr.td (str(key))
