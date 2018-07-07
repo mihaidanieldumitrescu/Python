@@ -7,7 +7,7 @@ import json
 import re
 import os,string
 
-SITE_NAME = "Traveletor"
+SITE_NAME = "Travelator"
 class Travelator:
 
 	def __init__(self):

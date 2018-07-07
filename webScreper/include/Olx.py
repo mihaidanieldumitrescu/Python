@@ -12,8 +12,7 @@ class Olx(object):
 		# [ {}, {}, {}]
 		
 		#self.loadDebug()
-
-	
+		
 	def loadDebug(self):
 		with open ("olxCarsResults.json","r") as f:
 			self.products = json.load ( f )
@@ -104,7 +103,7 @@ class OlxCars( Olx ):
 		searchlink = "https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/?search%5Bfilter_float_price%3Afrom%5D=600&search%5Bfilter_float_price%3Ato%5D=1400"
 		Olx.__init__( self, searchlink, 3 )
 		self.pp = pprint.PrettyPrinter( indent=4)
-		self.statistics = {}
+		self.statistics = { "otherCars" : { "prices": [], "occurences": 0} }
 		self.loadProducts()
 		self.filterWordsCarsModels = json.load( open( os.path.join (os.environ['OneDrive'], "PythonData", "config", "olx_cars.json")))
 		self.sortByModel()
@@ -126,6 +125,8 @@ class OlxCars( Olx ):
 						self.statistics[carModel]['occurences'] += 1
 					else:
 						otherCars.append ( [ self.filterDesc( productDesc[0]), productDesc[1]])
+						self.statistics['otherCars'].update ( {self.filterDesc( productDesc[0]) : productDesc[1] }  )
+						self.statistics['otherCars']['occurences'] += 1
 				tmpSum = 0
 				for price in self.statistics[carModel]['prices']:
 					tmpSum += int(  price  )
