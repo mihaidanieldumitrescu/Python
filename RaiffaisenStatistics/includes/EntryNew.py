@@ -3,53 +3,35 @@
 import re
 
 class EntryNew:
-    def __init__(self, period="undef", month=-1, year=-1, description="undef", value=-1, label="undef"):
+    def __init__(self, period='liquidation', year=-1, month=-1, day=-1, description="default", value=-1, label="default"):
         self.period = period
+        self.day = day
         self.month = month
         self.year = year 
         self.description = description 
         self.value =  value 
         self.label = label
-        self.validateEntries ( period, month, year, description, value, label )
+        self.validateEntries ( period, month, year, day, description, value, label )
  
     
-    def validateEntries(self, period, month, year, description, value, label):
+    def validateEntries( self, period, month, year, day, description, value, label):
         advanceSubtractMonth = 0
         year = int ( year )
+        day =  int ( day )
         #print "Debug periodInt '%s' \n"  % ( periodInt )
         if period == 'liquidation' or period == 'advance':      
-            self.period = period
-        else:
-            
+            self.period = 'liquidation'
+        else:            
             periodInt = int ( period )
-            if periodInt >= 1 and periodInt < 10:
-                self.period = "advance"
-                if label == "_salary" and ( periodInt >= 6 and periodInt < 10):
-                    label = "_salary_2"
-                    # add 1 month 
-                advanceSubtractMonth = 1
-            elif periodInt >= 10 and periodInt < 25:
-                self.period = "liquidation"
-                if label == "_salary" and ( periodInt >= 20 and periodInt < 25):
-                    label = "_salary_2"
-                    # add 1 month
-            elif periodInt >= 25 and periodInt <= 31:
-                self.period = "advance"    
-            else:
-                return "Error: Period must be either 'liquidation' or 'advance'"
+            
         if ( re.match ( "[a-zA-Z]+", str ( month ) ) ):
             self.month = month
         elif ( ( re.match ( "[0-9]+", str ( month ) ) )):
             month = int ( month )
             if month > 0 and month <= 12:      
                 self.month = month
-                if advanceSubtractMonth:
-                    if month == 1: 
-                        self.month = 12
-                        year -= 1
-                    else:
-                        self.month -= 1
         else:
+                self.month = -1
                 return "Error: Month value is invalid"
         
         if year > 2000:

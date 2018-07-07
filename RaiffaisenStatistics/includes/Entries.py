@@ -4,6 +4,7 @@ from html import HTML
 
 from RaiffaisenStatement import Statement
 
+import logging
 import xlrd
 import glob
 import pprint
@@ -33,6 +34,8 @@ class Entries(EntryNew):
         self.errorMsg = ""
         self.debugOutput = ""
         self.verbosity = "none"
+        
+        logging.basicConfig(filename='logfile.log',filemode='w', level=logging.DEBUG)
                 
         #used mainly for manually extracted csv files
 
@@ -66,6 +69,7 @@ class Entries(EntryNew):
         # generate a dict out of all extracted values which will be used to iterate the main dict
         
         ( keyYears, keyMonth, keyPeriods, keyLabels ) = ( {}, {}, {}, {})
+        
         for entryNewItem in self.currentYear:
             ( keyYears[entryNewItem.year],
               keyMonth[entryNewItem.month],
@@ -74,9 +78,12 @@ class Entries(EntryNew):
         
         # each extracted key found in data array
         for currYear in sorted(keyYears):
+
             self.htmlFrame[currYear] = {}
             
             for currMonth in sorted(keyMonth):
+                
+                logging.info("CHANGED DATE TO: {}-{}".format ( currYear, currMonth ) )
                 
                 self.htmlFrame[currYear][currMonth] = {}
                 monthStatistics = ""
@@ -117,8 +124,9 @@ class Entries(EntryNew):
                                  currEntry.month == currMonth and
                                  currEntry.period == currPeriod and
                                  currEntry.label == currLabel):
-                                
-                                # debug print str ( currEntry ) 
+                                logging.info ( "ENTRY: {}-{} | Record {}-{}-{} | {} | {} | {}".format ( currYear, currMonth, currEntry.year, currEntry.month, currEntry.day,
+                                                                                                        currEntry.label.ljust (15), currEntry.description.ljust (35), currEntry.value ) )
+                                # debug print str  ( currEntry ) 
                                 labelsPeriod[currLabel] += currEntry.value
                                 if currEntry.label == "spent;other":
                                     self.htmlFrame[currYear][currMonth][currPeriod]['otherOperations'].append (
@@ -145,13 +153,13 @@ class Entries(EntryNew):
                             currLabelCategory = label.split(";")[0]
                             switchLabel = ''
                             if lastLabel != currLabelCategory and lastLabel != "":    # if 'bills != food', when you get to the next category
-                                if not ( re.match ("^_", lastLabel) and re.match ("^_", currLabelCategory)):
+                                if not ( re.match ("^_", lastLabel) and re.match ("^_", currLabelCategory)): # _salary category
                                     if re.match ( "_", lastLabel ):
                                         switchLabel = '_income'
                                     else:
                                         switchLabel = lastLabel
                                     labelSummary += ( "\t---\n" +
-                                                      "\t%s:  %s lei \n" % ( switchLabel, str( totalLabel ).rjust(7)) +
+                                                      "\t%s:  %s lei \n" % ( switchLabel, str( totalLabel ).rjust(7) ) +
                                                       "\t\n" )
                                     
                                     # do not add input from income in month statistics
@@ -169,6 +177,7 @@ class Entries(EntryNew):
                             if labelsPeriod[label] != 0:
                                 labelSummary += ("\t%s => %s lei \n" % ( label.ljust(20), str( labelsPeriod[label] ).rjust(7)))
                             else:
+                                # print formatting: use "-" instead of "0"
                                 labelSummary += ("\t%s    %s  -  \n" % ( label.ljust(20), "".rjust(7)))
 
                                 
@@ -304,7 +313,7 @@ class Entries(EntryNew):
            self.dataVerification = sorted ( self.dataVerification )
            if len  ( statement.data['headers']['Data generare extras'].split("/") ) == 3:
                    (day, month, year) = statement.data['headers']['Data generare extras'].split("/")
-           self.newEntry( EntryNew( day, month, "20{}".format ( year ) , "sold precendent", statement.soldPrecendent(), "_soldPrecendent" ))
+           self.newEntry( EntryNew( day=day, month=month, year="20{}".format ( year ) , description="sold precendent", value=statement.soldPrecendent(), label="_soldPrecendent" ))
            for operation in statement.data['operations']:
                     
 
@@ -324,18 +333,18 @@ class Entries(EntryNew):
                    
                    #self, period="undef", month=-1, year=-1, description.lower()="undef", value=-1, label="undef"
                    if debitValue:
-                       self.newEntry( EntryNew( day, month, year, opDescription, - (debitValue), labelStr ))               
+                       self.newEntry( EntryNew( day=day, month=month, year=year, description=opDescription, value=-(debitValue), label=labelStr ))               
                    elif creditValue:
                        #print "credit: %s : %s \n" % ( opDescription, creditValue )
                        if re.search( self.configDict['salaryFirmName'], operation['Nume/Denumire ordonator/beneficiar'], re.IGNORECASE):
    
-                           self.newEntry( EntryNew( day, month, year, opDescription, creditValue, "_salary" ))
+                           self.newEntry( EntryNew ( day=day, month=month, year=year, description=opDescription, value=creditValue, label="_salary" ))
                        else:
                            whoTransfered = "_transferredInto"
                            if re.search ( "dumitrescu mihail", opDescription.lower()):
                                whoTransfered = "_transferredTata"
                            print "%s: '%s'" % ( whoTransfered, opDescription )
-                           self.newEntry( EntryNew( day, month, year, opDescription, creditValue, whoTransfered ))
+                           self.newEntry( EntryNew ( day=day, month=month, year=year, description=opDescription, value=creditValue, label=whoTransfered ) )
                    else:
                        self.errorString += "Warn: No debit or credit values! \n\t* Row is: currRow\n\n"
            
@@ -364,7 +373,6 @@ class Entries(EntryNew):
                 tr = table.tr
                 tr.td (str(month))
                 tr_per = table.tr
- 
                            
                 dictLiq = self.htmlFrame[year][month]['liquidation']
                 dictAdv = self.htmlFrame[year][month]['advance']
@@ -389,13 +397,3 @@ class Entries(EntryNew):
     def writeCSVdata(self):
         with open ("report.csv", "w") as f:
             f.write ( self.csvValues )
-            
-    def loadDebugValues(self):
-
-        self.currentYear.append ( EntryNew('liquidation', 1, 2017, "Drinks all night", 273, 'fun') )
-        self.currentYear.append ( EntryNew('advance', 2, 2017, "Drinks all night", 153, 'fun') )
-        self.currentYear.append ( EntryNew('liquidation', 2, 2017, "Girls night", 457, 'fun') )
-        self.currentYear.append ( EntryNew('liquidation', 2, 2017, "Girls night", 846, 'fun') )
-        self.currentYear.append ( EntryNew('advance', 3, 2017, "Boys night", 121, 'fun') )
-        self.currentYear.append ( EntryNew('advance', 3, 2017, "Cinema", 121, 'movies') )
-        self.currentYear.append ( EntryNew('advance', 3, 2017, "Popcorn", 121, 'movies') )
