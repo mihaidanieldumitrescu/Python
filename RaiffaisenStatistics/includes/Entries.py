@@ -3,6 +3,8 @@ from EntryNew import EntryNew
 from html import HTML
 
 from RaiffaisenStatement import Statement
+from collections import deque
+from dateutil.relativedelta import relativedelta
 
 import logging
 import xlrd
@@ -20,6 +22,7 @@ class Entries(EntryNew):
         self.currentYear = []
         #this is intermediary
         self.dictCurrentYear = {}
+        
         #{year}{month}{period} => value
         self.statistics = {}
         self.manualEntries = []
@@ -36,11 +39,50 @@ class Entries(EntryNew):
         self.verbosity = "none"
         
         logging.basicConfig(filename='logfile.log',filemode='w', level=logging.DEBUG)
-                
+ 
         #used mainly for manually extracted csv files
 
         self.extractDataXLS( inputFile )
+        # self.pp.pprint ( self.currentYear )
+    def getLabels (self):
+        labels = {}
         
+        for item in self.currentYear:
+
+            labels[ item.label ] = None
+
+        keyList = labels.keys()
+ 
+        return keyList
+    
+    def returnMonthData ( self, year, month ):
+        data = []
+        for item in self.currentYear:
+            if item.year == year and item.month == month:
+                data.append ( item )
+        return data
+        
+    def __iter__(self):
+        
+        # first entry in array by date
+        self.dateSeed = self.currentYear[0].datelog
+        self.lastDate = self.currentYear[-1].datelog
+        
+        return self
+    
+    def next(self):
+        
+        # this will iterate for each month
+        if ( self.dateSeed <= self.lastDate) :
+            data = self.returnMonthData ( self.dateSeed.year, int ( self.dateSeed.month )  )
+            self.dateSeed += relativedelta(months=1)
+            print "Dateseed is now {}\n".format ( self.dateSeed )                    
+            return data
+        else:
+            print "Iteration reached it's end. Dateseed value is {}".format (  self.dateSeed ) 
+            raise StopIteration
+
+    
     def __del__(self):
         #print json.dumps( self.htmlFrame )
         if self.debugOutput != "":
@@ -56,216 +98,6 @@ class Entries(EntryNew):
         for item in self.statistics.iteritems():
             tmp += str( item ) + "\n"
         return tmp
-
-    def retReference(self):
-        return self.currentYear
-        
-    def printValues(self):
-        for entry in self.currentYear:
-            print str( entry )
-    
-    def printStatistics(self):
-        
-        # generate a dict out of all extracted values which will be used to iterate the main dict
-        
-        ( keyYears, keyMonth, keyPeriods, keyLabels ) = ( {}, {}, {}, {})
-        
-        for entryNewItem in self.currentYear:
-            ( keyYears[entryNewItem.year],
-              keyMonth[entryNewItem.month],
-              keyPeriods[entryNewItem.period],
-              keyLabels[ entryNewItem.label] ) = (  "", "", "", "" )
-        
-        # each extracted key found in data array
-        for currYear in sorted(keyYears):
-
-            self.htmlFrame[currYear] = {}
-            
-            for currMonth in sorted(keyMonth):
-                
-                logging.info("CHANGED DATE TO: {}-{}".format ( currYear, currMonth ) )
-                
-                self.htmlFrame[currYear][currMonth] = {}
-                monthStatistics = ""
-                bufferMonth = {
-                                "leftOtherOp" : [],
-                                "rightOtherOp" : [],
-                                "leftLabels" : [],
-                                "rightLabels" : []
-                              }
-                tmpStatistics = ""
-                liquidationStatistics = []
-                advanceStatistics = []
-                totalMonth = 0
-                totalMonthByLabel = {}
-                # first initialisation
-                for label in keyLabels:
-                    key = label.split(';')[0]
-                    if not re.match ("_", key):
-                        totalMonthByLabel[key] = 0
-                # for advance and liquidation
-                for currPeriod in sorted( keyPeriods ):
-                    self.htmlFrame[currYear][currMonth][currPeriod] = {
-                                                                        'labelSummary' : [],
-                                                                        'otherOperations' : []
-                                                                      }
-                    labelsPeriod = {}
-                    otherOperations = currPeriod + " entries: \n\n"
-                    labelSummary = ""
-                    columnSize = 50
-                    
-                    for currLabel in keyLabels:
-                        labelsPeriod[currLabel] = 0
-                    
-                    # match values, print others    
-                    for currLabel in keyLabels:
-                        for currEntry in self.currentYear:
-                            if ( currEntry.year == currYear and
-                                 currEntry.month == currMonth and
-                                 currEntry.period == currPeriod and
-                                 currEntry.label == currLabel):
-                                logging.info ( "ENTRY: {}-{} | Record {}-{}-{} | {} | {} | {}".format ( currYear, currMonth, currEntry.year, currEntry.month, currEntry.day,
-                                                                                                        currEntry.label.ljust (15), currEntry.description.ljust (35), currEntry.value ) )
-                                # debug print str  ( currEntry ) 
-                                labelsPeriod[currLabel] += currEntry.value
-                                if currEntry.label == "spent;other":
-                                    self.htmlFrame[currYear][currMonth][currPeriod]['otherOperations'].append (
-                                        { currEntry.description : currEntry.value } )
-                                    otherOperations += ( "%s - %s\n" % ( currEntry.description.ljust(30),
-                                                                        ( str( currEntry.value) + " lei" ).ljust(10) ) )
-                    
-                    hasData = 0
-                    for label in sorted( labelsPeriod ):
-                        
-                        # bills;internet       => -109.59 lei
-                        # at least one label has value
-                        if labelsPeriod[label] != 0:
-                            hasData = 1
-            
-                    if hasData:                    
-                        # 2017, 8, liquidation 
-                        print "%s, %s, %s" % ( currYear, currMonth, currPeriod )    
-                        print '-' * 10 + "\n"
-                        lastLabel = ""
-                        totalLabel = 0
-                        for label in sorted( labelsPeriod ):
-
-                            currLabelCategory = label.split(";")[0]
-                            switchLabel = ''
-                            if lastLabel != currLabelCategory and lastLabel != "":    # if 'bills != food', when you get to the next category
-                                if not ( re.match ("^_", lastLabel) and re.match ("^_", currLabelCategory)): # _salary category
-                                    if re.match ( "_", lastLabel ):
-                                        switchLabel = '_income'
-                                    else:
-                                        switchLabel = lastLabel
-                                    labelSummary += ( "\t---\n" +
-                                                      "\t%s:  %s lei \n" % ( switchLabel, str( totalLabel ).rjust(7) ) +
-                                                      "\t\n" )
-                                    
-                                    # do not add input from income in month statistics
-                                    
-                                    if not re.match ("_", lastLabel):
-                                        totalMonth += totalLabel
-                                        totalMonthByLabel[lastLabel] += totalLabel
-                                    totalLabel = 0
-                                else:
-                                    pass # print "Exception in lastlabel '{}' !".format ( lastLabel )
-                            totalLabel += labelsPeriod[label]
-                            
-                            self.htmlFrame[currYear][currMonth][currPeriod]['labelSummary'].append ( { label : labelsPeriod [label] } )
-                            
-                            if labelsPeriod[label] != 0:
-                                labelSummary += ("\t%s => %s lei \n" % ( label.ljust(20), str( labelsPeriod[label] ).rjust(7)))
-                            else:
-                                # print formatting: use "-" instead of "0"
-                                labelSummary += ("\t%s    %s  -  \n" % ( label.ljust(20), "".rjust(7)))
-
-                                
-                            lastLabel = label.split(";")[0]
-                            
-                        # for the last label (no more labels to compare)
-                        labelSummary += "\t---\n"
-                        labelSummary += ("\t%s:  %s lei \n" % ( lastLabel, str ( totalLabel ).rjust(7)))
-                        totalMonth += totalLabel
-                        totalMonthByLabel[lastLabel] += totalLabel
-                        
-                           # print lastLabel + "\n"
-                        #print otherOperations
-                        #print labelSummary + "\n"
-                        
-                        if currPeriod == "liquidation":
-                           
-                            if otherOperations.split("\n"): 
-                                bufferMonth["leftOtherOp"] = otherOperations.split("\n")
-                            if labelSummary.split("\n"):
-                                bufferMonth["leftLabels"] = labelSummary.split("\n")
-                                
-                        elif currPeriod == "advance":
-                            
-                            if otherOperations.split("\n"):
-                                bufferMonth["rightOtherOp"] = otherOperations.split("\n")
-                                
-                            if labelSummary.split("\n"):
-                                bufferMonth["rightLabels"] = labelSummary.split("\n")
-                        else:
-                            self.errorMsg += ( "Error: Label '" + currPeriod + "' should not exist! \n\n " +
-                                               otherOperations + labelSummary + "\n"
-                                              )
-                        # balance elements -> equal number of elemnts left and right 
-                        deltaOtherOp = int ( len ( bufferMonth['leftOtherOp']) - len (bufferMonth['rightOtherOp']) )
-                        deltaLabels =  int ( len ( bufferMonth['leftLabels'] ) - len (bufferMonth['rightLabels'])  )
-                        
-                        # balancing number of elements from left and right divisions
-                        
-                        if deltaOtherOp > 0:
-                            for i in range ( deltaOtherOp ) : 
-                                bufferMonth['rightOtherOp'].append( ( "") )
-                        elif deltaOtherOp < 0:
-                            for i in range ( - deltaOtherOp ) : 
-                                bufferMonth['leftOtherOp'].append( "" )
-                        
-                        #for labels alsot 
-                        if deltaLabels > 0:
-                            for i in range ( deltaLabels  ) :
-                                bufferMonth['rightLabels'].append( "" )
-                        elif deltaLabels < 0:
-                            for i in range ( - deltaLabels ) :
-                                bufferMonth['leftLabels'].append( "" )
-                                
-                        if self.verbosity == "low":
-                            print "delta values are: '%s' '%s' \n" % (deltaOtherOp, deltaLabels)
-                # after each month print results
-                
-                
-                if 0:
-                    print "len values: %s %s \n" % (len ( bufferMonth['leftOtherOp'] ), len ( bufferMonth['rightOtherOp'] ))                    
-                    self.pp.pprint ( bufferMonth['leftOtherOp'] )
-                    self.pp.pprint ( bufferMonth['rightOtherOp'])
-                    print "\n"
-
-                # merge and print labels from liquidation and advance for current month
-                bufferMonth['rightLabels'].reverse()
-                for strLabels in bufferMonth['leftLabels']:
-                    monthStatistics += ( "%s | %s \n" % ( strLabels.ljust(columnSize),
-                                                          bufferMonth['rightLabels'].pop().ljust(columnSize) ))
-                
-                # merge other operations from liquidation and advance for current month    
-                bufferMonth['rightOtherOp'].reverse()    
-                for strOtherOp in bufferMonth['leftOtherOp']:
-                    monthStatistics += ( "%s | %s \n" % ( strOtherOp.ljust(columnSize),
-                                                          bufferMonth['rightOtherOp'].pop().ljust(columnSize) )) 
-
-                #self.debugOutput = advanceStatistics.join()
-                if monthStatistics != "":
-                    print monthStatistics + "\n"
-                
-                if totalMonth != 0:
-                    print "\t---\n\tMonth total spent: {}\n\n".format( totalMonth )
-                    for label in sorted (totalMonthByLabel):
-                        self.csvValues += "{};{};{};{}\n".format ( currYear,currMonth,label, totalMonthByLabel[label] )
-                    
-
-                #self.pp.pprint( bufferMonth )
                     
     def retValuesDict(self):
         tempStr = ""
@@ -289,35 +121,43 @@ class Entries(EntryNew):
     
     def newEntry(self, newEnt):
         self.currentYear.append ( newEnt )
+        self.currentYear.sort(key=lambda x: x.datelog)
         
         self.dictCurrentYear[newEnt.month] = {}
         self.dictCurrentYear[newEnt.month][newEnt.period] = []
         self.dictCurrentYear[newEnt.month][newEnt.period].append(newEnt)
 
     def extractDataXLS(self, dirname):
+        
+        # define path to where excel files are saved
+        
         files = glob.glob( os.path.join ( os.environ['OneDrive'], "PythonData" ,"extrasDeCont", "*xls"))
         
         with open ( os.path.join ( os.environ['OneDrive'], "PythonData", "config", "definedLabels.json") )  as f:
             self.configDict = json.load( f )
             
         if len ( files ) == 0:
-            print "No files found in folder \n"
+            raise Exception ( "No files found in folder \n" )
         
         for filename in files:
            
            statement = Statement ( )
            statement.loadStatement ( filename )
            
-           self.dataVerification.append ( "{}-{}".format ( statement.data['headers']['Data generare extras'].split("/")[2],
-                                                      statement.data['headers']['Data generare extras'].split("/")[1] ) )
-           self.dataVerification = sorted ( self.dataVerification )
-           if len  ( statement.data['headers']['Data generare extras'].split("/") ) == 3:
-                   (day, month, year) = statement.data['headers']['Data generare extras'].split("/")
-           self.newEntry( EntryNew( day=day, month=month, year="20{}".format ( year ) , description="sold precendent", value=statement.soldPrecendent(), label="_soldPrecendent" ))
+           extractStatementRegex = re.match ( r'(\d{2})/(\d{2})/(\d{2})', statement.data['headers']['Data generare extras'] )
+           if extractStatementRegex:
+                   ( day, month, year ) = ( extractStatementRegex.group(1), extractStatementRegex.group(2), extractStatementRegex.group(3) )
+                   soldPrecendentEntry = EntryNew( day=day, month=month, year="20{}".format ( year ) , description="Sold precendent!", value=statement.soldPrecendent(), label="_soldPrecendent" )
+                   self.newEntry(soldPrecendentEntry)
+                   logging.info(" ( extractDataXLS ) Sold precendent: '{}'".format ( soldPrecendentEntry )  )                 
+           else:
+                   logging.warn(" ( extractDataXLS ) Date format is not what expected! Date found: '{}'".format ( statement.data['headers']['Data generare extras'] ))                   
+ 
+           #logging.info ("( extractDataXLS ) For filename '{}', extracted date was '{}.{}.{}'".format ( filename, day, month, year ))
+ 
            for operation in statement.data['operations']:
                     
-
-                   (day, month, year) = operation['Data tranzactiei'].split("/")
+                   ( day, month, year ) = operation['Data tranzactiei'].split("/")
                    opDescription = operation['Descrierea tranzactiei'].split("|")[0]
                    if re.match("OPIB", operation['Descrierea tranzactiei']):
                       opDescription = operation['Descrierea tranzactiei'].split("|")[1]
@@ -375,9 +215,12 @@ class Entries(EntryNew):
                 tr_per = table.tr
                            
                 dictLiq = self.htmlFrame[year][month]['liquidation']
-                dictAdv = self.htmlFrame[year][month]['advance']
+                dictAdv = { 'labelSummary' : [] }
+                if 0:
+                    # will not be used anymore
+                    dictAdv = self.htmlFrame[year][month]['advance']
  
-                for entryLiq, entryAdv in zip ( dictLiq['labelSummary'], dictAdv['labelSummary']):
+                for entryLiq, entryAdv in zip ( dictLiq['labelSummary'], dictAdv['labelSummary'] ): # 
                     tr_nr = table.tr
                     for key in entryLiq:
                         tr_nr.td (str(key))

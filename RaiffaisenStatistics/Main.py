@@ -14,7 +14,7 @@ fDebug = "./extrasDeCont/Extras_15165113_21042017.xls"
 
 if debug == 1:
 	files = [fDebug]
-
+	
 loadData = Operations ()
 #writer = WriteHtmlOutput()
 #writer.run()
