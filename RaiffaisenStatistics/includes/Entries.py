@@ -67,16 +67,15 @@ class Entries(EntryNew):
         # first entry in array by date
         self.dateSeed = self.currentYear[0].datelog
         self.lastDate = self.currentYear[-1].datelog
-        
+        logging.info("dateSeed: {} lastDate: {}".format ( self.dateSeed, self.lastDate ) )
         return self
     
     def next(self):
         
         # this will iterate for each month
-        if ( self.dateSeed <= self.lastDate) :
+        if ( self.dateSeed <= self.lastDate + relativedelta(months=1) ) :
             data = self.returnMonthData ( self.dateSeed.year, int ( self.dateSeed.month )  )
             self.dateSeed += relativedelta(months=1)
-            print "Dateseed is now {}\n".format ( self.dateSeed )                    
             return data
         else:
             print "Iteration reached it's end. Dateseed value is {}".format (  self.dateSeed ) 
