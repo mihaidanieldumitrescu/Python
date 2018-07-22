@@ -8,6 +8,77 @@ import logging
 from Entries import Entries
 from EntryNew import EntryNew
 
+class EntriesCollection:
+    
+    def __init__(self ):
+        self.entries = []
+        self.htmlData = []
+        self.navigationHeaders = []
+    
+    def addMonthEntry(self, month):
+        self.navigationHeaders.append ( month.header )
+        self.entries.append ( month )
+    
+    def processData (self):
+        head = '<html><head><link rel="stylesheet" type="text/css" href="main.css" /></head><body>' # will not be needed
+        tail = '</body></html>'
+        
+        self.entries.reverse()
+        self.navigationHeaders.reverse()
+
+        self.htmlData.append(head)
+
+        for entry in self.entries:
+            # month div
+            self.htmlData.append ( "<div class=\"{}.{}\">".format ( entry.header[0], entry.header[1] ) )
+            self.htmlData.append ( "<h3>Statistics for {}.{}</h3>".format ( entry.header[0], entry.header[1] ) )
+
+            			
+            # statistics
+            self.htmlData.append ( "<div class=\"{0}\"><table><th colspan=\"2\">{0}</th>".format ( "statistics" ))
+            for row in entry.leftListSummary:
+                self.htmlData.append ( "<tr><td>{}</td><td>{}<td></tr>".format ( row[0], row[1] )  )
+                
+            self.htmlData.append ("</table></div>")
+            
+            # label categories
+            self.htmlData.append ( "<div class=\"{0}\"><table><th colspan=\"2\">{0}</th>".format ( "labelCategories" ))
+            for row in entry.rightListLabels:
+                self.htmlData.append ( "<tr><td>{}</td><td>{}<td></tr>".format ( row[0], row[1] )  )
+                
+            self.htmlData.append ("</table></div>")
+            
+            # filtered operations
+            self.htmlData.append ( "<div class=\"{0}\"><table><th colspan=\"4\">{0}</th>".format ( "filteredOperations" ))
+            
+            isNotFood = []            
+            isFood = []
+            for row in entry.monthEntryData:
+                if "food" in row[1]:
+                    isFood.append ( row )
+                else:
+                    isNotFood.append ( row )
+                    
+            for row in isNotFood:
+                self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row[2], row[3] )  )
+                
+            self.htmlData.append ("</table></div>")
+            
+            # food detail
+            self.htmlData.append ( "<div class=\"{0}\"><table><th colspan=\"4\">{0}</th>".format ( "foodDetail" ))
+            for row in isFood:
+                self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row[2], row[3] )  )
+                
+            self.htmlData.append ("</table></div>")
+        
+            self.htmlData.append ("</div>")
+        
+        self.htmlData.append(tail)
+    
+    def writeHtmlReport( self):
+        with open ( "reportLatest.html", "w") as f:
+            f.write("\n".join (self.htmlData))
+    
 class PrintEntries:
     
     def __init__(self):
@@ -20,20 +91,25 @@ class PrintEntries:
         self.leftListSummary = [] # spent 1000 lei ; food 700 lei
         self.rightListLabels = [] # spent; cash ATM => 10 lei
         self.rightOtherODescription = [] # HERVIG => 380 lei
+        self.monthEntryData = []
     
     def __repr__(self):
         string = "leftListSummary has : {} elements\nrightListLabels has: {} elements\notherOpDescription has: {} elements\n".format ( len ( self.leftListSummary ), len ( self.rightListLabels ), len ( self.rightOtherODescription ))
+        string = "PrintEntries element for '{}'".format  ( self.header )
+        
         return string
         
     def printTerminal (self):
         
         columnSize = 50
         monthStatistics = [] 
-        
+        print "%s, %s, %s" % ( self.header[0], self.header[1], self.header[2] )    
+        print '-' * 10 + "\n"
         # merge and print labels from liquidation and advance for current month
-        self.leftListSummary.reverse()
+ 
+        index = 0
         for item in self.rightListLabels:
-            popElem = self.leftListSummary.pop() if self.leftListSummary else []
+            popElem = self.leftListSummary[index] if ( len ( self.leftListSummary ) > index ) else []
             
             if popElem and popElem[0] == "---":
                 leftElement = popElem[0].ljust(50)
@@ -46,7 +122,7 @@ class PrintEntries:
                 rightElement = "{} => {}".format ( item[0].ljust(20), str ( "%.2f" % item[1]).rjust(10)  ) if item else ""
             
             monthStatistics.append ( "{} | {} ".format ( leftElement, rightElement ) )
-            
+            index += 1    
         monthStatistics.append ( "{}   {} ".format( "".ljust(columnSize), "---------------".ljust(20) )  )
         # second part
         # merge other operations from liquidation and advance for current month    
@@ -62,14 +138,6 @@ class PrintEntries:
         if monthStatistics :
                 print "\n".join ( monthStatistics )
                 print        
-    
-    def printHTML(self):
-        head = '<HTML><BODY>' # will not be needed
-        tail = '</BODY></HTML>'
-        
-        data = []
-        
-        data.append ( "<TABLE>" ) 
         
 class Operations:
        
@@ -92,6 +160,7 @@ class Operations:
         
         # for each month in ascending order
         keyLabels = self.entries.getLabels()
+        generateReportHTML = EntriesCollection()
         
         for monthlyReport in self.entries:
  
@@ -105,14 +174,14 @@ class Operations:
             tmpStatistics = ""
             liquidationStatistics = []
             advanceStatistics = []
-            totalMonth = 0
-            totalMonthByLabel = {}
+            sumOfAllLabels = 0
+            sumOfAllLabelsByLabel = {}
             
             # first initialisation
             for label in keyLabels:
                 key = label.split(';')[0]
                 if not re.match ("_", key):
-                    totalMonthByLabel[key] = 0
+                    sumOfAllLabelsByLabel[key] = 0
                                                     
             # for advance and liquidation
             for currPeriod in [ 'liquidation' ]:
@@ -124,7 +193,7 @@ class Operations:
                 
                 for currLabel in keyLabels:
                     labelsMonthlyValuesDict[currLabel] = 0
-                
+                entryData = []
                 # match values, print others    
                 for currLabel in keyLabels:
                     for currEntry in monthlyReport:
@@ -133,11 +202,13 @@ class Operations:
                             
                             logging.info ( "ENTRY: {}-{} | Record {}-{}-{} | {} | {} | {}".format ( currYear, currMonth, currEntry.year, currEntry.month, currEntry.day,
                                                                                                     currEntry.label.ljust (15), currEntry.description.ljust (35), currEntry.value ) )
+                            printEntries.monthEntryData.append ( ( "{}-{}-{}".format ( currEntry.year, currEntry.month, currEntry.day),
+                                                 currEntry.label, currEntry.description, currEntry.value ) )
                             # get values for each lable
                             labelsMonthlyValuesDict[currLabel] += currEntry.value
 
                             if currEntry.label == "spent;other":
-                                
+                            
                                 printEntries.rightOtherODescription.append ( [ currEntry.description, currEntry.value ])
                                 
                 # we finished gathering data, now we use the data                 
@@ -159,11 +230,10 @@ class Operations:
                     # headers for each month
                     # 2017, 8, liquidation
                     # ----------
-
-                    print "%s, %s, %s" % ( currYear, currMonth, currPeriod )    
-                    print '-' * 10 + "\n"
+                    
+                    printEntries.header = ( currYear, currMonth, currPeriod );
                     lastLabel = ""
-                    totalLabel = 0
+                    totalCurrentLabel = 0
                     
                     # { 'spent;food' : 300 }
                     for label in sorted( labelsMonthlyValuesDict ):
@@ -174,29 +244,32 @@ class Operations:
                         if lastLabel != currLabelCategory and lastLabel != "":    # if 'bills != food', when you get to the next category
    
                             if not ( re.match ("_", lastLabel) and re.match ("_", currLabelCategory)): # _salary category
+                                
                                 if ( re.match ("_", lastLabel)):
                                     printEntries.rightListLabels.append ( [ "---", 0 ] )
-                                    
+                                
+                                # first category is called _income as lastLabel value will be _transferredTata
+                                
                                 if re.match ( "_", lastLabel ):
                                     switchLabel = '_income'
-                                    incomeValue = totalLabel
+                                    incomeValue = totalCurrentLabel
                                 else:
                                     switchLabel = lastLabel
                                     printEntries.rightListLabels.append ( [ "---", 0 ] )
                                     
-                                printEntries.leftListSummary.append ( [switchLabel, totalLabel ] )
+                                printEntries.leftListSummary.append ( [switchLabel, totalCurrentLabel ] )
                                 # do not add input from income in month statistics
                                 
                                 if not re.match ("_", lastLabel):
-                                    totalMonth += totalLabel
-                                    totalMonthByLabel[lastLabel] += totalLabel
-                                totalLabel = 0
+                                    sumOfAllLabels += totalCurrentLabel
+                                    sumOfAllLabelsByLabel[lastLabel] += totalCurrentLabel
+                                totalCurrentLabel = 0
 
                             else:
                                 pass # print "Exception in lastlabel '{}' !".format ( lastLabel )
                                 
                         # for each label add to month
-                        totalLabel += labelsMonthlyValuesDict[label]
+                        totalCurrentLabel += labelsMonthlyValuesDict[label]
  
                         if labelsMonthlyValuesDict[label] != 0:
                             printEntries.rightListLabels.append ( [ label, labelsMonthlyValuesDict[label] ] )
@@ -208,17 +281,21 @@ class Operations:
                     # for the last label (no more labels to compare)
                     
             
-                    totalMonth += totalLabel
-                    totalMonthByLabel[lastLabel] += totalLabel
+                    sumOfAllLabels += totalCurrentLabel
+                    sumOfAllLabelsByLabel[lastLabel] += totalCurrentLabel
                     
-                    printEntries.leftListSummary. append ( [switchLabel, totalLabel ] )
+                    printEntries.leftListSummary. append ( [lastLabel, totalCurrentLabel ] )
             
-                    remainingValue = incomeValue + totalMonth
+                    remainingValue = incomeValue + sumOfAllLabels
+                    
                     printEntries.leftListSummary.append ( [ "---", 0 ] )
-                    printEntries.leftListSummary.append ( ['_total_spent', totalMonth ] )
+                    printEntries.leftListSummary.append ( printEntries.leftListSummary.pop(0))
+
+                    printEntries.leftListSummary.append ( ['_total_spent', sumOfAllLabels ] )
+                    printEntries.leftListSummary.append ( [ "---", 0 ] )
                     printEntries.leftListSummary.append ( ['_remaining', remainingValue ] )
                     printEntries.printTerminal()
-
+                    generateReportHTML.addMonthEntry ( printEntries )
             if 0:
                 print "len values: %s %s \n" % (len ( bufferMonth['leftOtherOp'] ), len ( self.rightOtherODescription ))                    
                 self.pp.pprint ( bufferMonth['leftOtherOp'] )
@@ -227,12 +304,14 @@ class Operations:
             
 
             
-            if totalMonth != 0:
+            if sumOfAllLabels != 0:
  
-                for label in sorted (totalMonthByLabel):
-                    pass # self.csvValues += "{};{};{};{}\n".format ( currYear,currMonth,label, totalMonthByLabel[label] )
+                for label in sorted (sumOfAllLabelsByLabel):
+                    pass # self.csvValues += "{};{};{};{}\n".format ( currYear,currMonth,label, sumOfAllLabelsByLabel[label] )
                 
-            
+        generateReportHTML.processData()
+        generateReportHTML.writeHtmlReport()
+    
             #self.pp.pprint( bufferMonth )
                 
     def __del__(self):
