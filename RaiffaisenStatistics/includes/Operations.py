@@ -37,14 +37,14 @@ class EntriesCollection:
             # statistics
             self.htmlData.append ( "<div class=\"{0}\"><table><th colspan=\"2\">{0}</th>".format ( "statistics" ))
             for row in entry.leftListSummary:
-                self.htmlData.append ( "<tr><td>{}</td><td>{}<td></tr>".format ( row[0], row[1] )  )
+                self.htmlData.append ( "<tr><td>{}</td><td>{}<td></tr>".format ( row[0], row[1] if row[1] != 0 else "" )  )
                 
             self.htmlData.append ("</table></div>")
             
             # label categories
             self.htmlData.append ( "<div class=\"{0}\"><table><th colspan=\"2\">{0}</th>".format ( "labelCategories" ))
             for row in entry.rightListLabels:
-                self.htmlData.append ( "<tr><td>{}</td><td>{}<td></tr>".format ( row[0], row[1] )  )
+                self.htmlData.append ( "<tr><td>{}</td><td>{}<td></tr>".format ( row[0], row[1] if row[1] != 0 else "" )  )
                 
             self.htmlData.append ("</table></div>")
             
@@ -76,45 +76,36 @@ class EntriesCollection:
         self.htmlData.append(tail)
     
     def writeHtmlReport( self):
-        cssContents = """
+        cssContents = """  
             h3 {
             	background-color: lightblue;
                 padding: 5px;
                 padding-left: 10px;
             }
 			
-    		table {
-                border-collapse: collapse;
-            }
+    		table { border-collapse: collapse; }
 			
-			th {
-				background-color: lightgrey;	 
-			}
+			th { background-color: lightgrey; }
 			
-            td:nth-child(1) { 
-            	padding-right: 30px; 
-            }
+            td:nth-child(1) { padding-right: 30px; }
 			
-            td:nth-child(2) { 
-             	 text-align: right;
-            }
+            td:nth-child(2) { text-align: right; }
 			
-            td {
-            	padding: 0px;
-            }
+            td { padding: 0px; }
  
 			.statistics, .labelCategories, .otherLabelDetail, .filteredOperations, .foodDetail {
 				vertical-align:top;
 				margin-top: 50px;
 				display: inline-block;
                 margin-right: 20px
-				
 			}
 			
-			.statistics  
-			{ 	
-				margin-left: 20px;
-			}
+			.statistics  { 	margin-left: 20px;
+            }
+			.statistics td:nth-child(2), .labelCategories  td:nth-child(2) { 
+             	 text-align: right;
+				 padding-right: 0px;
+            }
 			
 			.filteredOperations, .foodDetail, td:nth-child(2) { 
              	 text-align: left;
@@ -138,30 +129,28 @@ class EntriesCollection:
                 padding-left: 10px;
 			}
 			.navigation   {
-
 				padding:2px;
 				overflow: hidden;
 				position: fixed;
 				bottom: 0;
 				width: 100%;
-				}
+			}
+                
 			a. {
-			
 				padding-left: 10px;
 				padding:2px;
-			}	
-			a.active {
- 
-				color: white;
-			}
+            }	
+			a.active { color: white; }
+            
 			.navigation a:hover {
 				background-color: #ddd;
 				color: black;
 			} """
 
-        if not os.path.exists( "main.css" ):    
-            with open ( "main.css", "w") as f:
-                f.write( cssContents )    
+
+        with open ( "main.css", "w") as f:
+            f.write( cssContents )
+            
         with open ( "reportLatest.html", "w") as f:
             f.write("\n".join (self.htmlData))
     
@@ -380,7 +369,7 @@ class Operations:
                     printEntries.leftListSummary.append ( ['_total_spent', sumOfAllLabels ] )
                     printEntries.leftListSummary.append ( [ "---", 0 ] )
                     printEntries.leftListSummary.append ( ['_remaining', remainingValue ] )
-                    printEntries.printTerminal()
+                    #printEntries.printTerminal()
                     generateReportHTML.addMonthEntry ( printEntries )
             if 0:
                 print "len values: %s %s \n" % (len ( bufferMonth['leftOtherOp'] ), len ( self.rightOtherODescription ))                    
