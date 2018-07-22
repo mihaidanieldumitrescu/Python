@@ -114,6 +114,8 @@ class Statement(object):
 				break
 			if operatie ['Suma debit'] != '' :
 				sold -= float ( operatie['Suma debit'] )
+			if operatie ['Suma credit'] != '' :
+				sold += float ( operatie['Suma credit'] )
 		return sold
 
 if __name__ == "__main__":
