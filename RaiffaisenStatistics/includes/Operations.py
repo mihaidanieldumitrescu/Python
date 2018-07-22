@@ -76,6 +76,92 @@ class EntriesCollection:
         self.htmlData.append(tail)
     
     def writeHtmlReport( self):
+        cssContents = """
+            h3 {
+            	background-color: lightblue;
+                padding: 5px;
+                padding-left: 10px;
+            }
+			
+    		table {
+                border-collapse: collapse;
+            }
+			
+			th {
+				background-color: lightgrey;	 
+			}
+			
+            td:nth-child(1) { 
+            	padding-right: 30px; 
+            }
+			
+            td:nth-child(2) { 
+             	 text-align: right;
+            }
+			
+            td {
+            	padding: 0px;
+            }
+ 
+			.statistics, .labelCategories, .otherLabelDetail, .filteredOperations, .foodDetail {
+				vertical-align:top;
+				margin-top: 50px;
+				display: inline-block;
+                margin-right: 20px
+				
+			}
+			
+			.statistics  
+			{ 	
+				margin-left: 20px;
+			}
+			
+			.filteredOperations, .foodDetail, td:nth-child(2) { 
+             	 text-align: left;
+				 padding-right:20px;
+            }
+			.filteredOperations, .foodDetail, td:nth-child(3) { 
+             	 text-align: left;
+				 white-space: nowrap;				 
+				 padding-right:20px;
+			 
+            }
+			.filteredOperations .foodDetail, td:nth-child(4) { 
+             	 text-align: right;
+				 white-space: nowrap;
+            }
+			
+			.navigation{
+				background-color: lightblue;				
+				display: block;
+				vertical-align: bottom;
+                padding-left: 10px;
+			}
+			.navigation   {
+
+				padding:2px;
+				overflow: hidden;
+				position: fixed;
+				bottom: 0;
+				width: 100%;
+				}
+			a. {
+			
+				padding-left: 10px;
+				padding:2px;
+			}	
+			a.active {
+ 
+				color: white;
+			}
+			.navigation a:hover {
+				background-color: #ddd;
+				color: black;
+			} """
+
+        if not os.path.exists( "main.css" ):    
+            with open ( "main.css", "w") as f:
+                f.write( cssContents )    
         with open ( "reportLatest.html", "w") as f:
             f.write("\n".join (self.htmlData))
     
