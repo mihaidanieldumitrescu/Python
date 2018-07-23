@@ -37,38 +37,47 @@ class EntriesCollection:
             # statistics
             self.htmlData.append ( "<div class=\"{0}\"><table><th colspan=\"2\">{0}</th>".format ( "statistics" ))
             for row in entry.leftListSummary:
-                self.htmlData.append ( "<tr><td>{}</td><td>{}<td></tr>".format ( row[0], row[1] if row[1] != 0 else "" )  )
+                self.htmlData.append ( "<tr><td>{}</td><td>{}</td></tr>".format ( row[0], row[1] if row[1] != 0 else "" )  )
                 
             self.htmlData.append ("</table></div>")
             
             # label categories
             self.htmlData.append ( "<div class=\"{0}\"><table><th colspan=\"2\">{0}</th>".format ( "labelCategories" ))
             for row in entry.rightListLabels:
-                self.htmlData.append ( "<tr><td>{}</td><td>{}<td></tr>".format ( row[0], row[1] if row[1] != 0 else "" )  )
+                self.htmlData.append ( "<tr><td>{}</td><td>{}</td></tr>".format ( row[0], row[1] if row[1] != 0 else "" )  )
                 
             self.htmlData.append ("</table></div>")
             
             # filtered operations
             self.htmlData.append ( "<div class=\"{0}\"><table><th colspan=\"4\">{0}</th>".format ( "filteredOperations" ))
             
-            isNotFood = []            
+            isEverythingElse= []            
             isFood = []
+            isTransport = []
             for row in entry.monthEntryData:
                 if "food" in row[1]:
                     isFood.append ( row )
+                elif "transport" in row[1]:
+                    isTransport.append ( row )
                 else:
-                    isNotFood.append ( row )
+                    isEverythingElse.append ( row )
                     
-            for row in isNotFood:
+            for row in isEverythingElse:
                 self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row[2], row[3] )  )
                 
             self.htmlData.append ("</table></div>")
             
-            # food detail
-            self.htmlData.append ( "<div class=\"{0}\"><table><th colspan=\"4\">{0}</th>".format ( "foodDetail" ))
-            for row in isFood:
+            # food and transport detail
+            self.htmlData.append ( "<div class=\"{0}\"><table><th colspan=\"4\">{1}</th>".format ( "foodAndTransportDetail", "transportDetail" ))
+            
+            for row in isTransport:
                 self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row[2], row[3] )  )
                 
+            self.htmlData.append ( "</table><table style=\"margin-top: 20px;\"><th colspan=\"4\">{0}</th>".format ( "foodDetail" ))
+            
+            for row in isFood:
+                self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row[2], row[3] )  )
+ 
             self.htmlData.append ("</table></div>")
         
             self.htmlData.append ("</div>")
@@ -83,17 +92,21 @@ class EntriesCollection:
                 padding-left: 10px;
             }
 			
-    		table { border-collapse: collapse; }
+    		table {
+                background-color: beige;
+                border-collapse: collapse;
+                width: 100%;
+            }
 			
-			th { background-color: lightgrey; }
+			th { background-color: burlywood; }
 			
             td:nth-child(1) { padding-right: 30px; }
 			
             td:nth-child(2) { text-align: right; }
 			
             td { padding: 0px; }
- 
-			.statistics, .labelCategories, .otherLabelDetail, .filteredOperations, .foodDetail {
+            
+			.statistics, .labelCategories, .otherLabelDetail, .filteredOperations, .foodAndTransportDetail {
 				vertical-align:top;
 				margin-top: 50px;
 				display: inline-block;
@@ -107,17 +120,17 @@ class EntriesCollection:
 				 padding-right: 0px;
             }
 			
-			.filteredOperations, .foodDetail, td:nth-child(2) { 
+			.filteredOperations, .foodAndTransportDetail, td:nth-child(2) { 
              	 text-align: left;
 				 padding-right:20px;
             }
-			.filteredOperations, .foodDetail, td:nth-child(3) { 
+			.filteredOperations, .foodAndTransportDetail, td:nth-child(3) { 
              	 text-align: left;
 				 white-space: nowrap;				 
 				 padding-right:20px;
 			 
             }
-			.filteredOperations .foodDetail, td:nth-child(4) { 
+			.filteredOperations .foodAndTransportDetail, td:nth-child(4) { 
              	 text-align: right;
 				 white-space: nowrap;
             }
@@ -163,13 +176,12 @@ class PrintEntries:
         # e.g. [ ['spent', 1000 ], [ 'food', 700 ] ]
         
         self.header = None # YEAR-MONTH
-        self.leftListSummary = [] # spent 1000 lei ; food 700 lei
-        self.rightListLabels = [] # spent; cash ATM => 10 lei
-        self.rightOtherODescription = [] # HERVIG => 380 lei
-        self.monthEntryData = []
+        self.leftListSummary = [] # [( bills, 700 ), (  food, 1000 ) ]
+        self.rightListLabels = [] # ( spent;cash ATM, 100 )
+        self.rightOtherODescription = [] # ( HERVIG, 380 )
+        self.monthEntryData = [] # ( date , label, description, value )
     
     def __repr__(self):
-        string = "leftListSummary has : {} elements\nrightListLabels has: {} elements\notherOpDescription has: {} elements\n".format ( len ( self.leftListSummary ), len ( self.rightListLabels ), len ( self.rightOtherODescription ))
         string = "PrintEntries element for '{}'".format  ( self.header )
         
         return string
