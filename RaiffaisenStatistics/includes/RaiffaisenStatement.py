@@ -122,5 +122,7 @@ if __name__ == "__main__":
 	testObj = Statement()
 	if len ( sys.argv ) > 1:
 		testObj.loadStatement(  sys.argv[1] )
+		
+		print testObj.pp.pprint( testObj.data )
 	else:
 		print "Please specify a excel file found in 'Onedrive\PythonData\extrasDeCont' "

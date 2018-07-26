@@ -37,14 +37,14 @@ class EntriesCollection:
             # statistics
             self.htmlData.append ( "<div class=\"{0}\"><table><th colspan=\"2\">{0}</th>".format ( "statistics" ))
             for row in entry.leftListSummary:
-                self.htmlData.append ( "<tr><td>{}</td><td>{}</td></tr>".format ( row[0], row[1] if row[1] != 0 else "" )  )
+                self.htmlData.append ( "<tr><td>{}</td><td>{}</td></tr>".format ( row[0], "%.2f" % round(row[1] ,2) if row[1] != 0 else "" )  )
                 
             self.htmlData.append ("</table></div>")
             
             # label categories
             self.htmlData.append ( "<div class=\"{0}\"><table><th colspan=\"2\">{0}</th>".format ( "labelCategories" ))
             for row in entry.rightListLabels:
-                self.htmlData.append ( "<tr><td>{}</td><td>{}</td></tr>".format ( row[0], row[1] if row[1] != 0 else "" )  )
+                self.htmlData.append ( "<tr><td>{}</td><td>{}</td></tr>".format ( row[0], "%.2f" % round(row[1] ,2) if row[1] != 0 else "" )  )
                 
             self.htmlData.append ("</table></div>")
             
@@ -63,7 +63,7 @@ class EntriesCollection:
                     isEverythingElse.append ( row )
                     
             for row in isEverythingElse:
-                self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row[2], row[3] )  )
+                self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row[2], "%.2f" % round(row[3] ,2) )  )
                 
             self.htmlData.append ("</table></div>")
             
@@ -71,12 +71,12 @@ class EntriesCollection:
             self.htmlData.append ( "<div class=\"{0}\"><table><th colspan=\"4\">{1}</th>".format ( "foodAndTransportDetail", "transportDetail" ))
             
             for row in isTransport:
-                self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row[2], row[3] )  )
+                self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row[2], "%.2f" % round(row[3] ,2) )  )
                 
             self.htmlData.append ( "</table><table style=\"margin-top: 20px;\"><th colspan=\"4\">{0}</th>".format ( "foodDetail" ))
             
             for row in isFood:
-                self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row[2], row[3] )  )
+                self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row[2], "%.2f" % round(row[3] ,2) )  )
  
             self.htmlData.append ("</table></div>")
         
@@ -250,7 +250,8 @@ class Operations:
         generateReportHTML = EntriesCollection()
         
         for monthlyReport in self.entries:
- 
+            if not monthlyReport:
+                continue
             currYear = monthlyReport[0].year
             currMonth = monthlyReport[0].month
             
