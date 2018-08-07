@@ -48,23 +48,33 @@ class EntriesCollection:
                 
             self.htmlData.append ("</table></div>")
             
-            # filtered operations
-            self.htmlData.append ( "<div class=\"{0}\"><table><th colspan=\"4\">{0}</th>".format ( "filteredOperations" ))
             
             isEverythingElse= []            
             isFood = []
             isTransport = []
+            isBill = []
             for row in entry.monthEntryData:
-                if "food" in row[1]:
+                if   "bills" in row[1]:
+                    isBill.append ( row )   
+                elif "food" in row[1]:
                     isFood.append ( row )
                 elif "transport" in row[1]:
                     isTransport.append ( row )
                 else:
                     isEverythingElse.append ( row )
-                    
+            
+            # bills and spendings
+            
+            self.htmlData.append ( "<div class=\"{0}\"><table><th colspan=\"4\">{1}</th>".format ( "billsAndOtherDetail", "otherDetail" ))
+            
             for row in isEverythingElse:
                 self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row[2], "%.2f" % round(row[3] ,2) )  )
                 
+            self.htmlData.append ( "</table><table style=\"margin-top: 20px;\"><th colspan=\"4\">{0}</th>".format ( "bills" ))
+            
+            for row in isBill:
+                self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row[2], "%.2f" % round(row[3] ,2) )  )
+ 
             self.htmlData.append ("</table></div>")
             
             # food and transport detail
@@ -106,7 +116,7 @@ class EntriesCollection:
 			
             td { padding: 0px; }
             
-			.statistics, .labelCategories, .otherLabelDetail, .filteredOperations, .foodAndTransportDetail {
+			.statistics, .labelCategories, .otherLabelDetail, .otherDetail, .billsAndOtherDetail, .foodAndTransportDetail {
 				vertical-align:top;
 				margin-top: 50px;
 				display: inline-block;
@@ -120,17 +130,17 @@ class EntriesCollection:
 				 padding-right: 0px;
             }
 			
-			.filteredOperations, .foodAndTransportDetail, td:nth-child(2) { 
+			.otherDetail, .foodAndTransportDetail, td:nth-child(2) { 
              	 text-align: left;
 				 padding-right:20px;
             }
-			.filteredOperations, .foodAndTransportDetail, td:nth-child(3) { 
+			.otherDetail, .foodAndTransportDetail, td:nth-child(3) { 
              	 text-align: left;
 				 white-space: nowrap;				 
 				 padding-right:20px;
 			 
             }
-			.filteredOperations .foodAndTransportDetail, td:nth-child(4) { 
+			.otherDetail .foodAndTransportDetail, td:nth-child(4) { 
              	 text-align: right;
 				 white-space: nowrap;
             }
@@ -298,7 +308,11 @@ class Operations:
                             if currEntry.label == "spent;other":
                             
                                 printEntries.rightOtherODescription.append ( [ currEntry.description, currEntry.value ])
-                                
+                lastEntryDate = []
+                for item in monthlyReport:
+                    lastEntryDate.append ( item.day )
+                lastEntryDate.sort()
+
                 # we finished gathering data, now we use the data                 
                 # check for months that have no data
                 hasData = 0
@@ -375,13 +389,13 @@ class Operations:
                     printEntries.leftListSummary. append ( [lastLabel, totalCurrentLabel ] )
             
                     remainingValue = incomeValue + sumOfAllLabels
-                    
-                    printEntries.leftListSummary.append ( [ "---", 0 ] )
-                    printEntries.leftListSummary.append ( printEntries.leftListSummary.pop(0))
+                    printEntries.leftListSummary = sorted(printEntries.leftListSummary, key=lambda x: x[1], reverse=False)
+                    printEntries.leftListSummary.insert ( -1, [ "---", 0 ] )
+                    #printEntries.leftListSummary.append ( printEntries.leftListSummary.pop(0))
 
                     printEntries.leftListSummary.append ( ['_total_spent', sumOfAllLabels ] )
                     printEntries.leftListSummary.append ( [ "---", 0 ] )
-                    printEntries.leftListSummary.append ( ['_remaining', remainingValue ] )
+                    printEntries.leftListSummary.append ( ['_remaining_{}-{}'.format(lastEntryDate[-1], currMonth) , remainingValue ] )
                     #printEntries.printTerminal()
                     generateReportHTML.addMonthEntry ( printEntries )
             if 0:
