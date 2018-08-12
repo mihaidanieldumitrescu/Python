@@ -7,6 +7,7 @@ import logging
 
 from Entries import Entries
 from EntryNew import EntryNew
+from datetime import date
 
 class EntriesCollection:
     
@@ -14,19 +15,66 @@ class EntriesCollection:
         self.entries = []
         self.htmlData = []
         self.navigationHeaders = []
-    
+        self.chartData = []
+        
+    def addChartRow ( self, date, labelsArr ):
+        dividerLineValue = 6000
+        
+        # labelsArr: [ [ labelName, value ], [ labelName, value ], [ labelName, value ], [ labelName, value ] ]
+        monthConversion = " new Date ( {}, {}, {} )".format ( date.year, date.month, date.day )
+        
+        '''
+            data.addColumn('number', 'spent');
+            data.addColumn('number', 'bills');
+            data.addColumn('number', 'transport');
+            data.addColumn('number', 'food');
+            data.addColumn('number', 'leisure');
+        '''
+        
+        control = 0
+        valuesArr = []
+        for seekedLabel in ( 'spent', 'bills', 'transport', 'food', 'leisure'):
+            for pair in labelsArr:
+                if seekedLabel == pair[0]:
+                    valuesArr.append ( str ( int ( pair[1] * -1) ) )
+                    control += 1
+                    
+        valuesToStr = ""
+        if control == 5:
+            #  [ new Date ( 2018, 8, 3 ) 
+            self.chartData.append ( "[ {}, {}, {} ] ".format ( monthConversion, dividerLineValue, ", ".join ( valuesArr ) ) )
+        else:
+            logging.warn ( "EntriesCollection::addChartRow: Error! Expected 5 labels! \n\n Value of labelsArr is: ".format ( labelsArr )  )
+                                
     def addMonthEntry(self, month):
         self.navigationHeaders.append ( month.header )
         self.entries.append ( month )
-    
+        
+    def chartDataToString ( self ):
+        tmp = ""
+        chartDataCpy = self.chartData
+        
+        while ( len ( chartDataCpy ) > 0 ):
+            
+            tmp += chartDataCpy.pop()             
+            if len ( chartDataCpy ) > 0:
+                tmp += ", \n"
+        
+        return tmp
+
     def processData (self):
-        head = '<html><head><link rel="stylesheet" type="text/css" href="main.css" /></head><body>' # will not be needed
+        head = '''<html>
+                    <head>  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+                    <script src="chart.js"></script>
+                  <link rel="stylesheet" type="text/css" href="main.css" /></head><body>''' # will not be needed
         tail = '</body></html>'
         
         self.entries.reverse()
         self.navigationHeaders.reverse()
 
-        self.htmlData.append(head)
+        self.htmlData.append ( head )
+        self.htmlData.append ( "<h3>Yearly graphics</h3>" )
+        self.htmlData.append ( "<div id=\"chart_div\"></div>" )
 
         for entry in self.entries:
             # month div
@@ -95,7 +143,7 @@ class EntriesCollection:
         self.htmlData.append(tail)
     
     def writeHtmlReport( self):
-        cssContents = """  
+        cssContents = '''  
             h3 {
             	background-color: lightblue;
                 padding: 5px;
@@ -168,11 +216,46 @@ class EntriesCollection:
 			.navigation a:hover {
 				background-color: #ddd;
 				color: black;
-			} """
-
+			} '''
+            
+        chartJS = '''
+            google.charts.load('current', {packages: ['corechart']});
+            google.charts.setOnLoadCallback(drawBasic);
+            
+            function drawBasic() {
+                  var data = new google.visualization.DataTable();
+                  data.addColumn('date', 'month');
+                  data.addColumn('number', 'divider');
+                  data.addColumn('number', 'spent');
+                  data.addColumn('number', 'bills');
+                  data.addColumn('number', 'transport');
+                  data.addColumn('number', 'food');
+                  data.addColumn('number', 'leisure');
+                  data.addRows(dataArr);
+                  
+                  var options = {
+                    height: 800,
+                    width: 1800,
+                    hAxis: { title: 'Luna' },
+                    vAxis: { title: 'Lei' },
+                    seriesType: 'bars',
+                    isStacked: true,
+                    series: { 0: {type: 'line', color: 'grey'}}
+                  };
+            
+                  var chart = new google.visualization.ComboChart(document.getElementById('chart_div'));
+            
+                  chart.draw(data, options);
+            }
+            
+            var dataArr = [ ''' + self.chartDataToString() + ''' ];          
+        '''
 
         with open ( "main.css", "w") as f:
             f.write( cssContents )
+            
+        with open ( "chart.js", "w" ) as f:
+            f.write ( chartJS )
             
         with open ( "reportLatest.html", "w") as f:
             f.write("\n".join (self.htmlData))
@@ -385,7 +468,7 @@ class Operations:
             
                     sumOfAllLabels += totalCurrentLabel
                     sumOfAllLabelsByLabel[lastLabel] += totalCurrentLabel
-                    
+
                     printEntries.leftListSummary. append ( [lastLabel, totalCurrentLabel ] )
             
                     remainingValue = incomeValue + sumOfAllLabels
@@ -398,14 +481,13 @@ class Operations:
                     printEntries.leftListSummary.append ( ['_remaining_{}-{}'.format(lastEntryDate[-1], currMonth) , remainingValue ] )
                     #printEntries.printTerminal()
                     generateReportHTML.addMonthEntry ( printEntries )
+                    generateReportHTML.addChartRow ( date ( currYear, currMonth, 5 ) , printEntries.leftListSummary )
             if 0:
                 print "len values: %s %s \n" % (len ( bufferMonth['leftOtherOp'] ), len ( self.rightOtherODescription ))                    
                 self.pp.pprint ( bufferMonth['leftOtherOp'] )
                 self.pp.pprint ( self.rightOtherODescription)
                 print "\n"
-            
 
-            
             if sumOfAllLabels != 0:
  
                 for label in sorted (sumOfAllLabelsByLabel):
