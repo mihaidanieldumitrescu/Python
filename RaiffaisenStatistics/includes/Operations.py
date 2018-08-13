@@ -21,7 +21,7 @@ class EntriesCollection:
         dividerLineValue = 6000
         
         # labelsArr: [ [ labelName, value ], [ labelName, value ], [ labelName, value ], [ labelName, value ] ]
-        monthConversion = " new Date ( {}, {}, {} )".format ( date.year, date.month, date.day )
+        monthConversion = " new Date ( \"{}-{:02d}-{:02d}\" )".format ( date.year, date.month, date.day )
         
         '''
             data.addColumn('number', 'spent');
@@ -36,13 +36,13 @@ class EntriesCollection:
         for seekedLabel in ( 'spent', 'bills', 'transport', 'food', 'leisure'):
             for pair in labelsArr:
                 if seekedLabel == pair[0]:
-                    valuesArr.append ( str ( int ( pair[1] * -1) ) )
+                    valuesArr.append ( "{: <8}".format ( int ( pair[1] * -1) ) )
                     control += 1
                     
         valuesToStr = ""
         if control == 5:
             #  [ new Date ( 2018, 8, 3 ) 
-            self.chartData.append ( "[ {}, {}, {} ] ".format ( monthConversion, dividerLineValue, ", ".join ( valuesArr ) ) )
+            self.chartData.append ( "\t\t\t\t[ {},  {: <6}, {: <6} ] ".format ( monthConversion, dividerLineValue, ", ".join ( valuesArr ) ) )
         else:
             logging.warn ( "EntriesCollection::addChartRow: Error! Expected 5 labels! \n\n Value of labelsArr is: ".format ( labelsArr )  )
                                 
@@ -248,7 +248,7 @@ class EntriesCollection:
                   chart.draw(data, options);
             }
             
-            var dataArr = [ ''' + self.chartDataToString() + ''' ];          
+            var dataArr = [ \n\n''' + self.chartDataToString() + ''' \n\t\t\t];          
         '''
 
         with open ( "main.css", "w") as f:
