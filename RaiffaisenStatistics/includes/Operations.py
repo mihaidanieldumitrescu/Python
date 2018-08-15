@@ -16,6 +16,7 @@ class EntriesCollection:
         self.htmlData = []
         self.navigationHeaders = []
         self.chartData = []
+        self.chartDataTotals = []
         
     def addChartRow ( self, date, labelsArr ):
         dividerLineValue = 6000
@@ -24,6 +25,7 @@ class EntriesCollection:
         monthConversion = " new Date ( \"{}-{:02d}-{:02d}\" )".format ( date.year, date.month, date.day )
         
         '''
+            data.addColumn('number', 'cash');
             data.addColumn('number', 'spent');
             data.addColumn('number', 'bills');
             data.addColumn('number', 'transport');
@@ -33,16 +35,21 @@ class EntriesCollection:
         
         control = 0
         valuesArr = []
-        for seekedLabel in ( 'spent', 'bills', 'transport', 'food', 'leisure'):
+        valuesTotal = 0
+        for seekedLabel in (  'cash', 'spent', 'bills', 'transport', 'food', 'leisure'):
             for pair in labelsArr:
                 if seekedLabel == pair[0]:
                     valuesArr.append ( "{: <8}".format ( int ( pair[1] * -1) ) )
+                    valuesTotal += int ( pair[1] * -1) 
                     control += 1
                     
         valuesToStr = ""
-        if control == 5:
+        if control == 6:
             #  [ new Date ( 2018, 8, 3 ) 
+
             self.chartData.append ( "\t\t\t\t[ {},  {: <6}, {: <6} ] ".format ( monthConversion, dividerLineValue, ", ".join ( valuesArr ) ) )
+            self.chartDataTotals.append ( "\t\t\t\t[ {},  {: <6}, {: <6} ] ".format ( monthConversion, dividerLineValue, valuesTotal  ) )
+
         else:
             logging.warn ( "EntriesCollection::addChartRow: Error! Expected 5 labels! \n\n Value of labelsArr is: ".format ( labelsArr )  )
                                 
@@ -50,9 +57,9 @@ class EntriesCollection:
         self.navigationHeaders.append ( month.header )
         self.entries.append ( month )
         
-    def chartDataToString ( self ):
+    def chartDataToString ( self, chartData):
         tmp = ""
-        chartDataCpy = self.chartData
+        chartDataCpy = chartData
         
         while ( len ( chartDataCpy ) > 0 ):
             
@@ -75,6 +82,7 @@ class EntriesCollection:
         self.htmlData.append ( head )
         self.htmlData.append ( "<h3>Yearly graphics</h3>" )
         self.htmlData.append ( "<div id=\"chart_div\"></div>" )
+        self.htmlData.append ( "<div id=\"chart_div2\"></div>" )
 
         for entry in self.entries:
             # month div
@@ -221,11 +229,13 @@ class EntriesCollection:
         chartJS = '''
             google.charts.load('current', {packages: ['corechart']});
             google.charts.setOnLoadCallback(drawBasic);
+            google.charts.setOnLoadCallback(drawDetail);
             
             function drawBasic() {
                   var data = new google.visualization.DataTable();
                   data.addColumn('date', 'month');
                   data.addColumn('number', 'divider');
+                  data.addColumn('number', 'cash');
                   data.addColumn('number', 'spent');
                   data.addColumn('number', 'bills');
                   data.addColumn('number', 'transport');
@@ -240,15 +250,46 @@ class EntriesCollection:
                     vAxis: { title: 'Lei' },
                     seriesType: 'bars',
                     isStacked: true,
-                    series: { 0: {type: 'line', color: 'grey'}}
+                    series: { 0: {type: 'line', color: 'grey', enableInteractivity: false, visibleInLegend: false }}
                   };
             
-                  var chart = new google.visualization.ComboChart(document.getElementById('chart_div'));
+                  var chart = new google.visualization.ComboChart(document.getElementById('chart_div2'));
             
                   chart.draw(data, options);
             }
             
-            var dataArr = [ \n\n''' + self.chartDataToString() + ''' \n\t\t\t];          
+            function drawDetail() {
+                  var data = new google.visualization.DataTable();
+                  data.addColumn('date', 'month');
+                  data.addColumn('number', 'divider');
+                  data.addColumn('number', 'cash');
+
+                  data.addRows(dataArr2);
+                  
+                var view = new google.visualization.DataView(data);
+				view.setColumns([ 0, 1, 2,
+                       { calc: "stringify",
+                         sourceColumn: 2,
+                         type: "string",
+                         role: "annotation" }
+                        ]);
+                  var options = {
+                    height: 800,
+                    width: 1800,
+                    hAxis: { title: 'Luna' },
+                    vAxis: { title: 'Lei' },
+                    seriesType: 'bars',
+                    series: { 0: {type: 'line', color: 'grey', enableInteractivity: false, visibleInLegend: false }}
+                  };
+            
+                  var chart = new google.visualization.ComboChart(document.getElementById('chart_div'));
+            
+                  chart.draw(view, options);
+            }
+            
+
+            var dataArr = [ \n\n''' + self.chartDataToString(self.chartData) + ''' \n\t\t\t];          
+            var dataArr2 = [ \n\n''' + self.chartDataToString(self.chartDataTotals ) + ''' \n\t\t\t];          
         '''
 
         with open ( "main.css", "w") as f:
