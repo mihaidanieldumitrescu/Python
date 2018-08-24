@@ -43,12 +43,17 @@ class EntriesCollection:
                     valuesTotal += int ( pair[1] * -1) 
                     control += 1
                     
+        incomeValue = 0            
+        for pair in labelsArr:
+            if '_income'  == pair[0]:
+                incomeValue = "{: <8}".format ( int ( pair[1] ) ) 
+                
         valuesToStr = ""
         if control == 6:
             #  [ new Date ( 2018, 8, 3 ) 
 
             self.chartData.append ( "\t\t\t\t[ {},  {: <6}, {: <6} ] ".format ( monthConversion, dividerLineValue, ", ".join ( valuesArr ) ) )
-            self.chartDataTotals.append ( "\t\t\t\t[ {},  {: <6}, {: <6} ] ".format ( monthConversion, dividerLineValue, valuesTotal  ) )
+            self.chartDataTotals.append ( "\t\t\t\t[ {},  {: <6}, {: <6}, {: <6} ] ".format ( monthConversion, dividerLineValue, valuesTotal, incomeValue  ) )
 
         else:
             logging.warn ( "EntriesCollection::addChartRow: Error! Expected 5 labels! \n\n Value of labelsArr is: ".format ( labelsArr )  )
@@ -262,7 +267,8 @@ class EntriesCollection:
                   var data = new google.visualization.DataTable();
                   data.addColumn('date', 'month');
                   data.addColumn('number', 'divider');
-                  data.addColumn('number', 'cash');
+                  data.addColumn('number', 'spent');
+                  data.addColumn('number', 'income');
 
                   data.addRows(dataArr2);
                   
@@ -270,6 +276,11 @@ class EntriesCollection:
 				view.setColumns([ 0, 1, 2,
                        { calc: "stringify",
                          sourceColumn: 2,
+                         type: "string",
+                         role: "annotation" },
+                         3,
+                        { calc: "stringify",
+                         sourceColumn: 3,
                          type: "string",
                          role: "annotation" }
                         ]);
