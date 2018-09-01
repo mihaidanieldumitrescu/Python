@@ -31,12 +31,14 @@ class EntriesCollection:
             data.addColumn('number', 'transport');
             data.addColumn('number', 'food');
             data.addColumn('number', 'leisure');
+            data.addColumn('number', 'travel');
         '''
         
         control = 0
         valuesArr = []
         valuesTotal = 0
-        for seekedLabel in (  'cash', 'spent', 'bills', 'transport', 'food', 'leisure'):
+        defLabels = (  'cash', 'spent', 'bills', 'transport', 'food', 'leisure', 'travel' )
+        for seekedLabel in defLabels:
             for pair in labelsArr:
                 if seekedLabel == pair[0]:
                     valuesArr.append ( "{: <8}".format ( int ( pair[1] * -1) ) )
@@ -49,14 +51,14 @@ class EntriesCollection:
                 incomeValue = "{: <8}".format ( int ( pair[1] ) ) 
                 
         valuesToStr = ""
-        if control == 6:
+        if control == len (defLabels):
             #  [ new Date ( 2018, 8, 3 ) 
 
             self.chartData.append ( "\t\t\t\t[ {},  {: <6}, {: <6} ] ".format ( monthConversion, dividerLineValue, ", ".join ( valuesArr ) ) )
             self.chartDataTotals.append ( "\t\t\t\t[ {},  {: <6}, {: <6}, {: <6} ] ".format ( monthConversion, dividerLineValue, valuesTotal, incomeValue  ) )
 
         else:
-            logging.warn ( "EntriesCollection::addChartRow: Error! Expected 5 labels! \n\n Value of labelsArr is: ".format ( labelsArr )  )
+            logging.warn ( "EntriesCollection::addChartRow: Error! Expected '{}' labels! \n\n Value of labelsArr is: {}".format ( len ( defLabels ),  labelsArr )  )
                                 
     def addMonthEntry(self, month):
         self.navigationHeaders.append ( month.header )
@@ -86,8 +88,10 @@ class EntriesCollection:
 
         self.htmlData.append ( head )
         self.htmlData.append ( "<h3>Yearly graphics</h3>" )
-        self.htmlData.append ( "<div id=\"chart_div\"></div>" )
-        self.htmlData.append ( "<div id=\"chart_div2\"></div>" )
+        self.htmlData.append ( "<div id='chart_div'></div>" )
+        self.htmlData.append ( "<div id='chart_div2'></div>" )
+        self.htmlData.append ( "<div id='chart_wrapper'><div id='chart_div3'></div></div>" )
+
 
         for entry in self.entries:
             # month div
@@ -158,85 +162,92 @@ class EntriesCollection:
     def writeHtmlReport( self):
         cssContents = '''  
             h3 {
-            	background-color: lightblue;
+                background-color: lightblue;
                 padding: 5px;
                 padding-left: 10px;
             }
-			
-    		table {
+            
+            table {
                 background-color: beige;
                 border-collapse: collapse;
                 width: 100%;
             }
-			
-			th { background-color: burlywood; }
-			
+            
+            th { background-color: burlywood; }
+            
             td:nth-child(1) { padding-right: 30px; }
-			
+            
             td:nth-child(2) { text-align: right; }
-			
+            
             td { padding: 0px; }
             
-			.statistics, .labelCategories, .otherLabelDetail, .otherDetail, .billsAndOtherDetail, .foodAndTransportDetail {
-				vertical-align:top;
-				margin-top: 50px;
-				display: inline-block;
-                margin-right: 20px
-			}
-			
-			.statistics  { 	margin-left: 20px;
+            #chart_wrapper {
+                overflow-x: scroll;
+                overflow-y: hidden;
+                width: 1900px;
             }
-			.statistics td:nth-child(2), .labelCategories  td:nth-child(2) { 
-             	 text-align: right;
-				 padding-right: 0px;
-            }
-			
-			.otherDetail, .foodAndTransportDetail, td:nth-child(2) { 
-             	 text-align: left;
-				 padding-right:20px;
-            }
-			.otherDetail, .foodAndTransportDetail, td:nth-child(3) { 
-             	 text-align: left;
-				 white-space: nowrap;				 
-				 padding-right:20px;
-			 
-            }
-			.otherDetail .foodAndTransportDetail, td:nth-child(4) { 
-             	 text-align: right;
-				 white-space: nowrap;
-            }
-			
-			.navigation{
-				background-color: lightblue;				
-				display: block;
-				vertical-align: bottom;
-                padding-left: 10px;
-			}
-			.navigation   {
-				padding:2px;
-				overflow: hidden;
-				position: fixed;
-				bottom: 0;
-				width: 100%;
-			}
-                
-			a. {
-				padding-left: 10px;
-				padding:2px;
-            }	
-			a.active { color: white; }
             
-			.navigation a:hover {
-				background-color: #ddd;
-				color: black;
-			} '''
+            .statistics, .labelCategories, .otherLabelDetail, .otherDetail, .billsAndOtherDetail, .foodAndTransportDetail {
+                vertical-align:top;
+                margin-top: 50px;
+                display: inline-block;
+                margin-right: 20px
+            }
+            
+            .statistics  { 	margin-left: 20px;
+            }
+            .statistics td:nth-child(2), .labelCategories  td:nth-child(2) { 
+                text-align: right;
+                padding-right: 0px;
+            }
+            
+            .otherDetail, .foodAndTransportDetail, td:nth-child(2) { 
+                text-align: left;
+                padding-right:20px;
+            }
+            .otherDetail, .foodAndTransportDetail, td:nth-child(3) { 
+                text-align: left;
+                white-space: nowrap;                
+                padding-right:20px;
+            
+            }
+            .otherDetail .foodAndTransportDetail, td:nth-child(4) { 
+                text-align: right;
+                white-space: nowrap;
+            }
+            
+            .navigation{
+                background-color: lightblue;
+                display: block;
+                vertical-align: bottom;
+                padding-left: 10px;
+            }
+            .navigation   {
+                padding:2px;
+                overflow: hidden;
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+            }
+                
+            a. {
+                padding-left: 10px;
+                padding:2px;
+            }
+            a.active { color: white; }
+            
+            .navigation a:hover {
+                background-color: #ddd;
+                color: black;
+            } '''
             
         chartJS = '''
             google.charts.load('current', {packages: ['corechart']});
-            google.charts.setOnLoadCallback(drawBasic);
+            google.charts.setOnLoadCallback(drawCategoryStacked);
+            google.charts.setOnLoadCallback(drawCategorySideBySide);
             google.charts.setOnLoadCallback(drawDetail);
             
-            function drawBasic() {
+            function drawCategoryStacked() {
                   var data = new google.visualization.DataTable();
                   data.addColumn('date', 'month');
                   data.addColumn('number', 'divider');
@@ -246,11 +257,12 @@ class EntriesCollection:
                   data.addColumn('number', 'transport');
                   data.addColumn('number', 'food');
                   data.addColumn('number', 'leisure');
+                  data.addColumn('number', 'travel');
                   data.addRows(dataArr);
                   
                   var options = {
                     height: 800,
-                    width: 1800,
+                    width: 1900,
                     hAxis: { title: 'Luna' },
                     vAxis: { title: 'Lei' },
                     seriesType: 'bars',
@@ -263,6 +275,36 @@ class EntriesCollection:
                   chart.draw(data, options);
             }
             
+            function drawCategorySideBySide() {
+                  var data = new google.visualization.DataTable();
+                  data.addColumn('date', 'month');
+                  data.addColumn('number', 'divider');
+                  data.addColumn('number', 'cash');
+                  data.addColumn('number', 'spent');
+                  data.addColumn('number', 'bills');
+                  data.addColumn('number', 'transport');
+                  data.addColumn('number', 'food');
+                  data.addColumn('number', 'leisure');
+                  data.addColumn('number', 'travel');
+                  data.addRows(dataArr);
+                  
+                  var view = new google.visualization.DataView(data);
+                  view.setColumns([ 0, 2, 3, 4, 5, 6, 7, 8 ]);
+                  var options = {
+                    height: 800,
+                    width: 6000,
+                    hAxis: { title: 'Luna' },
+                    vAxis: { title: 'Lei' },
+                    seriesType: 'bars',
+                    isStacked: false,
+                  };
+            
+                  var chart = new google.visualization.ComboChart(document.getElementById('chart_div3'));
+            
+                  chart.draw(view, options);
+            }
+            
+            
             function drawDetail() {
                   var data = new google.visualization.DataTable();
                   data.addColumn('date', 'month');
@@ -273,7 +315,7 @@ class EntriesCollection:
                   data.addRows(dataArr2);
                   
                 var view = new google.visualization.DataView(data);
-				view.setColumns([ 0, 1, 2,
+                view.setColumns([ 0, 1, 2,
                        { calc: "stringify",
                          sourceColumn: 2,
                          type: "string",
@@ -286,7 +328,7 @@ class EntriesCollection:
                         ]);
                   var options = {
                     height: 800,
-                    width: 1800,
+                    width: 1900,
                     hAxis: { title: 'Luna' },
                     vAxis: { title: 'Lei' },
                     seriesType: 'bars',
@@ -297,7 +339,6 @@ class EntriesCollection:
             
                   chart.draw(view, options);
             }
-            
 
             var dataArr = [ \n\n''' + self.chartDataToString(self.chartData) + ''' \n\t\t\t];          
             var dataArr2 = [ \n\n''' + self.chartDataToString(self.chartDataTotals ) + ''' \n\t\t\t];          

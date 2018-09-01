@@ -175,7 +175,7 @@ class Entries(EntryNew):
                        self.newEntry( EntryNew( day=day, month=month, year=year, description=opDescription, value=-(debitValue), label=labelStr ))               
                    elif creditValue:
                        #print "credit: %s : %s \n" % ( opDescription, creditValue )
-                       if re.search( self.configDict['salaryFirmName'], operation['Nume/Denumire ordonator/beneficiar'], re.IGNORECASE):
+                       if re.search( "|".join (self.configDict['salaryFirmName'] ), operation['Nume/Denumire ordonator/beneficiar'], re.IGNORECASE):
    
                            self.newEntry( EntryNew ( day=day, month=month, year=year, description=opDescription, value=creditValue, label="_salary" ))
                        else:
@@ -191,12 +191,16 @@ class Entries(EntryNew):
 
     def labelMe(self, description):
 
-        labelDict = self.configDict['labelDict']
+        masterLabels = self.configDict['labelDict']
         
-        for labelCat in labelDict:
-            for label in labelDict [ labelCat ]:    
-                if re.search ( labelDict[ labelCat ][ label ], description.lower() ):
-                    return "%s;%s" % (labelCat, label)
+        # { 	"leisure" :  {
+		#			            "film": [ "cinema", "avatar media project" ] }
+        # ...
+        
+        for masterLabel in masterLabels:
+            for childLabel in masterLabels [ masterLabel ]:    
+                if re.search ( "|".join ( masterLabels [ masterLabel ][ childLabel ]), description.lower() ):
+                    return "%s;%s" % ( masterLabel, childLabel )  
 
         return "spent;other"
     
