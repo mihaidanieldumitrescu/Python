@@ -16,8 +16,16 @@ class EntriesCollection:
         self.htmlData = []
         self.navigationHeaders = []
         self.chartData = []
+        self.chartDataBills = []
         self.chartDataTotals = []
+        self.rentValue = self.loadRentValue ()
         
+    def loadRentValue (self):
+        tmp = ""
+        with open ( os.path.join ( os.environ['OneDrive'], "PythonData", "config", "definedLabels.json") )  as f:
+            tmp = json.load( f )
+        return tmp['rentValue']
+    
     def addChartRow ( self, date, labelsArr ):
         dividerLineValue = 6000
         
@@ -38,14 +46,22 @@ class EntriesCollection:
         valuesArr = []
         valuesTotal = 0
         defLabels = (  'cash', 'spent', 'bills', 'transport', 'food', 'leisure', 'travel' )
+        soldPrecendent = 0
+        for elem in self.entries:
+            for pair in elem.rightListLabels:
+                if '_soldPrecendent' == pair[0]:
+                    soldPrecendent = (pair[1])
+                    print "Found soldPrecendent '{}'".format (soldPrecendent)
         for seekedLabel in defLabels:
+            # ['_income', -100]
             for pair in labelsArr:
                 if seekedLabel == pair[0]:
                     valuesArr.append ( "{: <8}".format ( int ( pair[1] * -1) ) )
                     valuesTotal += int ( pair[1] * -1) 
                     control += 1
                     
-        incomeValue = 0            
+        incomeValue = 0
+        
         for pair in labelsArr:
             if '_income'  == pair[0]:
                 incomeValue = "{: <8}".format ( int ( pair[1] ) ) 
@@ -54,8 +70,14 @@ class EntriesCollection:
         if control == len (defLabels):
             #  [ new Date ( 2018, 8, 3 ) 
 
+            rentValue = 0
+            
+            #  [  new Date ( "2018-09-05" ),  6000  , 1100    , 286     , 0       , 244     , 225     , 0       , 0        ] ,             
             self.chartData.append ( "\t\t\t\t[ {},  {: <6}, {: <6} ] ".format ( monthConversion, dividerLineValue, ", ".join ( valuesArr ) ) )
-            self.chartDataTotals.append ( "\t\t\t\t[ {},  {: <6}, {: <6}, {: <6} ] ".format ( monthConversion, dividerLineValue, valuesTotal, incomeValue  ) )
+            
+            self.chartDataBills.append ( "\t\t\t\t[ {},  {: <6}, {: <6},  {: <6},  {: <6} ] ".format ( monthConversion, dividerLineValue, self.rentValue, valuesArr[2], valuesArr[4] ) )  
+            #  [  new Date ( "2018-09-05" ),  6000  , 1855  , 6001     ] , 2
+            self.chartDataTotals.append ( "\t\t\t\t[ {},  {: <6}, {: <6}, {: <6}, {: <6} ] ".format ( monthConversion, dividerLineValue, valuesTotal, incomeValue , soldPrecendent ) )
 
         else:
             logging.warn ( "EntriesCollection::addChartRow: Error! Expected '{}' labels! \n\n Value of labelsArr is: {}".format ( len ( defLabels ),  labelsArr )  )
@@ -83,20 +105,17 @@ class EntriesCollection:
                   <link rel="stylesheet" type="text/css" href="main.css" /></head><body>''' # will not be needed
         tail = '</body></html>'
         
-        self.entries.reverse()
-        self.navigationHeaders.reverse()
-
         self.htmlData.append ( head )
         self.htmlData.append ( "<h3>Yearly graphics</h3>" )
-        self.htmlData.append ( "<div id='chart_div'></div>" )
-        self.htmlData.append ( "<div id='chart_div2'></div>" )
+        self.htmlData.append ( "<div id='chart_wrapper'><div id='chart_div'></div></div>" )
+        self.htmlData.append ( "<div id='chart_wrapper'><div id='chart_div2'></div></div>" )
         self.htmlData.append ( "<div id='chart_wrapper'><div id='chart_div3'></div></div>" )
 
 
         for entry in self.entries:
             # month div
             self.htmlData.append ( "<div class=\"{}.{}\">".format ( entry.header[0], entry.header[1] ) )
-            self.htmlData.append ( "<h3>Statistics for {}.{}</h3>".format ( entry.header[0], entry.header[1] ) )
+            self.htmlData.append ( "<h3>Statistics for {}.{} -> Period segment from {} to {} </h3>".format ( entry.header[0], entry.header[1], entry.subHeader[0], entry.subHeader[1] ) )
 
             			
             # statistics
@@ -262,8 +281,8 @@ class EntriesCollection:
                   
                   var options = {
                     height: 800,
-                    width: 1900,
-                    hAxis: { title: 'Luna' },
+                    width: 3000,
+                    hAxis: { title: 'Segmente luna' },
                     vAxis: { title: 'Lei' },
                     seriesType: 'bars',
                     isStacked: true,
@@ -279,24 +298,28 @@ class EntriesCollection:
                   var data = new google.visualization.DataTable();
                   data.addColumn('date', 'month');
                   data.addColumn('number', 'divider');
-                  data.addColumn('number', 'cash');
-                  data.addColumn('number', 'spent');
+                  data.addColumn('number', 'rent');
                   data.addColumn('number', 'bills');
-                  data.addColumn('number', 'transport');
                   data.addColumn('number', 'food');
-                  data.addColumn('number', 'leisure');
-                  data.addColumn('number', 'travel');
-                  data.addRows(dataArr);
+
+                  data.addRows(dataArr3);
                   
                   var view = new google.visualization.DataView(data);
-                  view.setColumns([ 0, 2, 3, 4, 5, 6, 7, 8 ]);
+                  view.setColumns([ 0, 2, 3, 4,
+                        {
+                            calc: function (dt, row) {
+                            return dt.getValue(row, 2) + dt.getValue(row, 3)+ dt.getValue(row, 4);
+                        },
+                            type: "number",
+                            role: "annotation"
+                        } ]);
                   var options = {
                     height: 800,
-                    width: 6000,
+                    width: 3000,
                     hAxis: { title: 'Luna' },
                     vAxis: { title: 'Lei' },
                     seriesType: 'bars',
-                    isStacked: false,
+                    isStacked: true,
                   };
             
                   var chart = new google.visualization.ComboChart(document.getElementById('chart_div3'));
@@ -311,24 +334,32 @@ class EntriesCollection:
                   data.addColumn('number', 'divider');
                   data.addColumn('number', 'spent');
                   data.addColumn('number', 'income');
+                  data.addColumn('number', 'soldPrecendent');
+
+                  
 
                   data.addRows(dataArr2);
                   
                 var view = new google.visualization.DataView(data);
-                view.setColumns([ 0, 1, 2,
+                view.setColumns([ 0, 1,
+                       2,
                        { calc: "stringify",
                          sourceColumn: 2,
                          type: "string",
                          role: "annotation" },
-                         3,
-                        { calc: "stringify",
+                       3,
+                       { calc: "stringify",
                          sourceColumn: 3,
                          type: "string",
-                         role: "annotation" }
-                        ]);
+                         role: "annotation" },
+                        4,
+                        { calc: "stringify",
+                         sourceColumn: 4,
+                         type: "string",
+                         role: "annotation" }]);
                   var options = {
                     height: 800,
-                    width: 1900,
+                    width: 3000,
                     hAxis: { title: 'Luna' },
                     vAxis: { title: 'Lei' },
                     seriesType: 'bars',
@@ -341,7 +372,9 @@ class EntriesCollection:
             }
 
             var dataArr = [ \n\n''' + self.chartDataToString(self.chartData) + ''' \n\t\t\t];          
-            var dataArr2 = [ \n\n''' + self.chartDataToString(self.chartDataTotals ) + ''' \n\t\t\t];          
+            var dataArr3= [ \n\n''' + self.chartDataToString(self.chartDataBills ) + ''' \n\t\t\t];
+            var dataArr2 = [ \n\n''' + self.chartDataToString(self.chartDataTotals ) + ''' \n\t\t\t];
+            
         '''
 
         with open ( "main.css", "w") as f:
@@ -362,6 +395,7 @@ class PrintEntries:
         # e.g. [ ['spent', 1000 ], [ 'food', 700 ] ]
         
         self.header = None # YEAR-MONTH
+        self.subHeader = None
         self.leftListSummary = [] # [( bills, 700 ), (  food, 1000 ) ]
         self.rightListLabels = [] # ( spent;cash ATM, 100 )
         self.rightOtherODescription = [] # ( HERVIG, 380 )
@@ -443,7 +477,7 @@ class Operations:
             
             logging.info("CHANGED DATE TO: {}-{}".format ( currYear, currMonth ) )            
             printEntries = PrintEntries()
-            
+            printEntries.subHeader = [ monthlyReport[0].datelog, monthlyReport[-1].datelog  ]
             monthStatistics = ""
             tmpStatistics = ""
             liquidationStatistics = []
@@ -458,123 +492,122 @@ class Operations:
                     sumOfAllLabelsByLabel[key] = 0
                                                     
             # for advance and liquidation
-            for currPeriod in [ 'liquidation' ]:
  
-                labelsMonthlyValuesDict = {}
-                otherOperations = currPeriod + " entries: \n\n"
-                labelSummary = []
-
+            labelsMonthlyValuesDict = {}
+            currPeriod = ''
+            otherOperations = currPeriod + " entries: \n\n"
+            labelSummary = []
+            entryData = []
+            
+            for currLabel in keyLabels:
+                labelsMonthlyValuesDict[currLabel] = 0
                 
-                for currLabel in keyLabels:
-                    labelsMonthlyValuesDict[currLabel] = 0
-                entryData = []
-                # match values, print others    
-                for currLabel in keyLabels:
-                    for currEntry in monthlyReport:
-                        if ( currEntry.period == currPeriod and
-                             currEntry.label == currLabel):
-                            
-                            logging.info ( "ENTRY: {}-{} | Record {}-{}-{} | {} | {} | {}".format ( currYear, currMonth, currEntry.year, currEntry.month, currEntry.day,
-                                                                                                    currEntry.label.ljust (15), currEntry.description.ljust (35), currEntry.value ) )
-                            printEntries.monthEntryData.append ( ( "{}-{}-{}".format ( currEntry.year, currEntry.month, currEntry.day),
-                                                 currEntry.label, currEntry.description, currEntry.value ) )
-                            # get values for each lable
-                            labelsMonthlyValuesDict[currLabel] += currEntry.value
+            # match values, print others    
+            for currLabel in keyLabels:
+                for currEntry in monthlyReport:
+                    if ( currEntry.label == currLabel ):
+                        
+                        logging.info ( "ENTRY: {}-{} | Record {}-{}-{} | {} | {} | {}".format ( currYear, currMonth, currEntry.year, currEntry.month, currEntry.day,
+                                                                                                currEntry.label.ljust (15), currEntry.description.ljust (35), currEntry.value ) )
+                        printEntries.monthEntryData.append ( ( "{}-{}-{}".format ( currEntry.year, currEntry.month, currEntry.day),
+                                             currEntry.label, currEntry.description, currEntry.value ) )
+                        # get values for each lable
+                        labelsMonthlyValuesDict[currLabel] += currEntry.value
 
-                            if currEntry.label == "spent;other":
-                            
-                                printEntries.rightOtherODescription.append ( [ currEntry.description, currEntry.value ])
-                lastEntryDate = []
-                for item in monthlyReport:
-                    lastEntryDate.append ( item.day )
-                lastEntryDate.sort()
+                        if currEntry.label == "spent;other":
+                        
+                            printEntries.rightOtherODescription.append ( [ currEntry.description, currEntry.value ])
+            lastEntryDate = []
+            for item in monthlyReport:
+                lastEntryDate.append ( item.day )
+            lastEntryDate.sort()
 
-                # we finished gathering data, now we use the data                 
-                # check for months that have no data
-                hasData = 0
+            # we finished gathering data, now we use the data                 
+            # check for months that have no data
+            hasData = 0
+            
+            for label in sorted( labelsMonthlyValuesDict ):
                 
+                # bills;internet       => -109.59 lei
+                # at least one label has value
+                
+                if labelsMonthlyValuesDict[label] != 0:
+                    hasData = 1
+        
+            if hasData:
+                
+                incomeValue = 0
+                
+                # headers for each month
+                # 2017, 8, liquidation
+                # ----------
+                
+                printEntries.header = ( currYear, currMonth, currPeriod );
+                lastLabel = ""
+                totalCurrentLabel = 0
+                
+                # { 'spent;food' : 300 }
                 for label in sorted( labelsMonthlyValuesDict ):
+        
+                    currLabelCategory = label if re.match ( "_", label) else label.split(";")[0]
+                    switchLabel = ''
                     
-                    # bills;internet       => -109.59 lei
-                    # at least one label has value
-                    
-                    if labelsMonthlyValuesDict[label] != 0:
-                        hasData = 1
-            
-                if hasData:
-                    
-                    incomeValue = 0
-                    
-                    # headers for each month
-                    # 2017, 8, liquidation
-                    # ----------
-                    
-                    printEntries.header = ( currYear, currMonth, currPeriod );
-                    lastLabel = ""
-                    totalCurrentLabel = 0
-                    
-                    # { 'spent;food' : 300 }
-                    for label in sorted( labelsMonthlyValuesDict ):
-            
-                        currLabelCategory = label if re.match ( "_", label) else label.split(";")[0]
-                        switchLabel = ''
-                        
-                        if lastLabel != currLabelCategory and lastLabel != "":    # if 'bills != food', when you get to the next category
-   
-                            if not ( re.match ("_", lastLabel) and re.match ("_", currLabelCategory)): # _salary category
-                                
-                                if ( re.match ("_", lastLabel)):
-                                    printEntries.rightListLabels.append ( [ "---", 0 ] )
-                                
-                                # first category is called _income as lastLabel value will be _transferredTata
-                                
-                                if re.match ( "_", lastLabel ):
-                                    switchLabel = '_income'
-                                    incomeValue = totalCurrentLabel
-                                else:
-                                    switchLabel = lastLabel
-                                    printEntries.rightListLabels.append ( [ "---", 0 ] )
-                                    
-                                printEntries.leftListSummary.append ( [switchLabel, totalCurrentLabel ] )
-                                # do not add input from income in month statistics
-                                
-                                if not re.match ("_", lastLabel):
-                                    sumOfAllLabels += totalCurrentLabel
-                                    sumOfAllLabelsByLabel[lastLabel] += totalCurrentLabel
-                                totalCurrentLabel = 0
+                    if lastLabel != currLabelCategory and lastLabel != "":    # if 'bills != food', when you get to the next category
 
-                            else:
-                                pass # print "Exception in lastlabel '{}' !".format ( lastLabel )
-                                
-                        # for each label add to month
-                        totalCurrentLabel += labelsMonthlyValuesDict[label]
- 
-                        if labelsMonthlyValuesDict[label] != 0:
-                            printEntries.rightListLabels.append ( [ label, labelsMonthlyValuesDict[label] ] )
-                        else:
-                            printEntries.rightListLabels.append ( [ label, 0 ] )            
+                        if not ( re.match ("_", lastLabel) and re.match ("_", currLabelCategory)): # _salary category
                             
-                        lastLabel = label if re.match ( "_", label) else label.split(";")[0]
+                            if ( re.match ("_", lastLabel)):
+                                printEntries.rightListLabels.append ( [ "---", 0 ] )
+                            
+                            # first category is called _income as lastLabel value will be _transferredTata
+                            
+                            if re.match ( "_", lastLabel ):
+                                switchLabel = '_income'
+                                incomeValue = totalCurrentLabel
+                            else:
+                                switchLabel = lastLabel
+                                printEntries.rightListLabels.append ( [ "---", 0 ] )
+                                
+                            printEntries.leftListSummary.append ( [switchLabel, totalCurrentLabel ] )
+                            # do not add input from income in month statistics
+                            
+                            if not re.match ("_", lastLabel):
+                                sumOfAllLabels += totalCurrentLabel
+                                sumOfAllLabelsByLabel[lastLabel] += totalCurrentLabel
+                            totalCurrentLabel = 0
+
+                        else:
+                            pass # print "Exception in lastlabel '{}' !".format ( lastLabel )
+                            
+                    # for each label add to month
+                    totalCurrentLabel += labelsMonthlyValuesDict[label]
+
+                    if labelsMonthlyValuesDict[label] != 0:
+                        printEntries.rightListLabels.append ( [ label, labelsMonthlyValuesDict[label] ] )
+                    else:
+                        printEntries.rightListLabels.append ( [ label, 0 ] )            
                         
-                    # for the last label (no more labels to compare)
+                    lastLabel = label if re.match ( "_", label) else label.split(";")[0]
                     
-            
-                    sumOfAllLabels += totalCurrentLabel
-                    sumOfAllLabelsByLabel[lastLabel] += totalCurrentLabel
+                # for the last label (no more labels to compare)
+                
+        
+                sumOfAllLabels += totalCurrentLabel
+                sumOfAllLabelsByLabel[lastLabel] += totalCurrentLabel
 
-                    printEntries.leftListSummary. append ( [lastLabel, totalCurrentLabel ] )
-            
-                    remainingValue = incomeValue + sumOfAllLabels
-                    printEntries.leftListSummary = sorted(printEntries.leftListSummary, key=lambda x: x[1], reverse=False)
-                    printEntries.leftListSummary.insert ( -1, [ "---", 0 ] )
-                    #printEntries.leftListSummary.append ( printEntries.leftListSummary.pop(0))
+                printEntries.leftListSummary. append ( [lastLabel, totalCurrentLabel ] )
+        
+                remainingValue = incomeValue + sumOfAllLabels
+                printEntries.leftListSummary = sorted(printEntries.leftListSummary, key=lambda x: x[1], reverse=False)
+                printEntries.leftListSummary.insert ( -1, [ "---", 0 ] )
+                #printEntries.leftListSummary.append ( printEntries.leftListSummary.pop(0))
 
-                    printEntries.leftListSummary.append ( ['_total_spent', sumOfAllLabels ] )
-                    printEntries.leftListSummary.append ( [ "---", 0 ] )
-                    printEntries.leftListSummary.append ( ['_remaining_{}-{}'.format(lastEntryDate[-1], currMonth) , remainingValue ] )
-                    #printEntries.printTerminal()
-                    generateReportHTML.addMonthEntry ( printEntries )
-                    generateReportHTML.addChartRow ( date ( currYear, currMonth, 5 ) , printEntries.leftListSummary )
+                printEntries.leftListSummary.append ( ['_total_spent', sumOfAllLabels ] )
+                printEntries.leftListSummary.append ( [ "---", 0 ] )
+                printEntries.leftListSummary.append ( ['_remaining_{}-{}'.format(lastEntryDate[-1], currMonth) , remainingValue ] )
+                #printEntries.printTerminal()
+                generateReportHTML.addMonthEntry ( printEntries )
+                generateReportHTML.addChartRow ( date ( currYear, currMonth, 5 ) , printEntries.leftListSummary )
             if 0:
                 print "len values: %s %s \n" % (len ( bufferMonth['leftOtherOp'] ), len ( self.rightOtherODescription ))                    
                 self.pp.pprint ( bufferMonth['leftOtherOp'] )

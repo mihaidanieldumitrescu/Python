@@ -23,8 +23,12 @@ class EntryNew:
         day =  int ( day )
         #print "Debug periodInt '%s' \n"  % ( periodInt )
         if period == 'liquidation' or period == 'advance':      
-            self.period = 'liquidation'
+            self.period = period
         else:
+            # shouldn't I try to categorize the period here?
+            
+            # 15 < days < lastDay of Month => advance, only for salary?
+            
             print " (EntryNew) Error: Period value is invalid: '{}' \n\n".format ( period )            
             
         if ( re.match ( "[a-zA-Z]+", str ( month ) ) ):
@@ -55,7 +59,7 @@ class EntryNew:
         shortP = ""
         if self.period == 'liquidation':
             shortP = 'L'
-        elif self.period == 'liquidation':
+        elif self.period == 'advance':
             shortP = 'A'
         else:
             shortP = '?'

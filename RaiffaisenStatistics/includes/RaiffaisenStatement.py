@@ -54,7 +54,7 @@ class Statement(object):
 	def loadStatement(self, filename ):
 		files = filename
 		fullPathToFile = os.path.join ( os.environ['OneDrive'], "PythonData" ,"extrasDeCont", filename )
-		print "trying to open " + fullPathToFile
+		print "Statement found: '{}'".format ( fullPathToFile )
 		book = xlrd.open_workbook( fullPathToFile )
 		sh = book.sheet_by_index(0)
 		overdraftFlag = 0
@@ -92,17 +92,30 @@ class Statement(object):
 
 					if re.search ( r'5244$', currRow[10].value ) and re.search ( "dumitrescu", currRow[8].value, re.IGNORECASE):
 						cardCF = "Rata Card Cumparaturi|"
+					dataUtilizarii = ""
+					
+					# ENEL ENERGIE MUNTENIA BUCURESTI |Card nr. XXXX XXXX XXXX XXXX |Data utilizarii cardului 2/03/2017
+					# UBER   *TRIP                    |Card nr. XXXX XXXX XXXX XXXX |Valoare in EUR 4.31 |1 EUR = 4.6404 RON |Data utilizarii cardului 9/09/2018
+					
+					if "Data utilizarii cardului" in currRow[11].value:
+						tmp = currRow[11].value.split("|")[-1]
+						# Data utilizarii cardului 8/09/2018
+						
+						dataUtilizarii = tmp.split()[-1]
+					else:
+						dataUtilizarii = currRow[1].value
 					
 					self.data['operations'].append ( {
 					
 									"Data inregistrare"  : currRow[0].value ,
 									"Data tranzactiei" : currRow[1].value ,
+									"Data utilizarii cardului" : dataUtilizarii,
 									"Suma debit" : currRow[2].value  ,
 									"Suma credit" : currRow[3].value ,
 									"Nume/Denumire ordonator/beneficiar" : currRow[8].value,
-									"Descrierea tranzactiei" : cardCF + currRow[11].value 
-								} )
+									"Descrierea tranzactiei" : cardCF + currRow[11].value
 
+								} )
 		#self.pp.pprint (self.data)
 	def soldPrecendent (self):
 		sold = float ( self.data['rulaj']['Sold initial'] )

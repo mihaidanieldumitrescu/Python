@@ -6,11 +6,11 @@ from RaiffaisenStatement import Statement
 from collections import deque
 from dateutil.relativedelta import relativedelta
 
-import logging
+import logging,datetime
 import xlrd
 import glob
 import pprint
-import os.path
+import os,sys
 import re
 import json
 
@@ -55,30 +55,69 @@ class Entries(EntryNew):
  
         return keyList
     
-    def returnMonthData ( self, year, month ):
+    def returnMonthData ( self, year, month ) :
+        
+        # returns data entries from first day of the month to the last
+        
         data = []
         for item in self.currentYear:
             if item.year == year and item.month == month:
                 data.append ( item )
         return data
+    
+    def returnMonthSegmentData ( self, beginingPeriodDate, endPeriodDate ):
+        
+        # this contains data from salary payment to the next salary
+
+        data = []
+        for item in self.currentYear:
+            if beginingPeriodDate <= item.datelog < endPeriodDate  :
+                data.append ( item )
+        return data
+    
+    def returnSalaryPaymentDates ( self ):
+        data = []
+        liquidationDates = [ datetime.date ( 2000, 1, 1 ) ]  # dummy date
+
+        for item in self.currentYear:
+            if item.label == '_salary' and item.period == 'liquidation':
+                data.append ( item )
+                        
+        for element in data:
+            liquidationDates.append ( element.datelog )
+        liquidationDates.append ( datetime.date ( 2040, 1, 1 ) ) # dummy date 
+        return liquidationDates
         
     def __iter__(self):
         
-        # first entry in array by date
-        self.dateSeed = self.currentYear[0].datelog
-        self.lastDate = self.currentYear[-1].datelog
-        logging.info("dateSeed: {} lastDate: {}".format ( self.dateSeed, self.lastDate ) )
+        self.paymentLiquidationDatesArr = self.returnSalaryPaymentDates()
+        self.index = len ( self.paymentLiquidationDatesArr ) - 1
+        
+        if len ( self.paymentLiquidationDatesArr ) < 2 :
+            print "( Entries::__iter__ ) Error! paymentLiquidationDatesArr has less than two elements!"
+            sys.exit(1)
+            
+        logging.info ("__iter__ initialized with paymentLiquidationDatesArr: \n{}\n\n".format ( self.paymentLiquidationDatesArr))
+ 
         return self
     
     def next(self):
         
         # this will iterate for each month
-        if ( self.dateSeed <= self.lastDate + relativedelta(months=1) ) :
-            data = self.returnMonthData ( self.dateSeed.year, int ( self.dateSeed.month )  )
-            self.dateSeed += relativedelta(months=1)
+
+        if ( self.index > 0 ) :
+
+            beginingPeriodDate = self.paymentLiquidationDatesArr [ self.index - 1 ]
+            endPeriodDate = self.paymentLiquidationDatesArr [ self.index ]
+            print "Reading data from '{}' to '{}' ...".format (beginingPeriodDate, endPeriodDate - datetime.timedelta(days=1))
+            logging.info ( "__next__ '{}' -> '{}'".format (beginingPeriodDate, endPeriodDate  - datetime.timedelta(days=1)))
+            data = self.returnMonthSegmentData ( beginingPeriodDate, endPeriodDate )
+            
+            self.index -= 1
             return data
         else:
-            print "Iteration reached it's end. Dateseed value is {}".format (  self.dateSeed ) 
+            print 
+            print "Iteration reached it's end. Last begin value is {}".format (  self.paymentLiquidationDatesArr [ self.index + 1  ] ) 
             raise StopIteration
 
     
@@ -155,8 +194,7 @@ class Entries(EntryNew):
            #logging.info ("( extractDataXLS ) For filename '{}', extracted date was '{}.{}.{}'".format ( filename, day, month, year ))
  
            for operation in statement.data['operations']:
-                    
-                   ( day, month, year ) = operation['Data tranzactiei'].split("/")
+                   ( day, month, year ) = operation['Data utilizarii cardului'].split("/")
                    opDescription = operation['Descrierea tranzactiei'].split("|")[0]
                    if re.match("OPIB", operation['Descrierea tranzactiei']):
                       opDescription = operation['Descrierea tranzactiei'].split("|")[1]
@@ -165,7 +203,7 @@ class Entries(EntryNew):
                    labelStr = self.labelMe( opDescription )
    
                    data = ( "  Data: %s Operatie: %s Eticheta: %s\n " +
-                            "  Valoare debit: %s Valoare credit: %s\n") % ( operation['Data tranzactiei'],  opDescription, self.labelMe( opDescription ),
+                            "  Valoare debit: %s Valoare credit: %s\n") % ( operation['Data utilizarii cardului'],  opDescription, self.labelMe( opDescription ),
                                                                          debitValue,  creditValue )    
                    if self.verbosity == "high":
                        print data
@@ -176,17 +214,18 @@ class Entries(EntryNew):
                    elif creditValue:
                        #print "credit: %s : %s \n" % ( opDescription, creditValue )
                        if re.search( "|".join (self.configDict['salaryFirmName'] ), operation['Nume/Denumire ordonator/beneficiar'], re.IGNORECASE):
-   
-                           self.newEntry( EntryNew ( day=day, month=month, year=year, description=opDescription, value=creditValue, label="_salary" ))
+                           if ( 1 <= int ( day ) <= 15):
+                                self.newEntry( EntryNew ( day=day, month=month, year=year, description=opDescription, value=creditValue, label="_salary" ))
+                           else:
+                                self.newEntry( EntryNew ( day=day, month=month, year=year, period='advance', description=opDescription, value=creditValue, label="_salary" ))     
                        else:
                            whoTransfered = "_transferredInto"
                            if re.search ( "dumitrescu mihail", opDescription.lower()):
                                whoTransfered = "_transferredTata"
-                           print "%s: '%s'" % ( whoTransfered, opDescription )
                            self.newEntry( EntryNew ( day=day, month=month, year=year, description=opDescription, value=creditValue, label=whoTransfered ) )
                    else:
                        self.errorString += "Warn: No debit or credit values! \n\t* Row is: currRow\n\n"
-           
+        print "\nDone loading statement data ...\n\n"   
            #self.pp.pprint ( statement.data )
 
     def labelMe(self, description):
@@ -194,7 +233,7 @@ class Entries(EntryNew):
         masterLabels = self.configDict['labelDict']
         
         # { 	"leisure" :  {
-		#			            "film": [ "cinema", "avatar media project" ] }
+        #           "film": [ "cinema", "avatar media project" ] }
         # ...
         
         for masterLabel in masterLabels:
