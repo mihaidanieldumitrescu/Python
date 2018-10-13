@@ -238,7 +238,7 @@ class Entries(EntryNew):
         
         for masterLabel in masterLabels:
             for childLabel in masterLabels [ masterLabel ]:    
-                if re.search ( "|".join ( masterLabels [ masterLabel ][ childLabel ]), description.lower() ):
+                if re.search ( r"|".join ( masterLabels [ masterLabel ][ childLabel ]), description.lower() ):
                     return "%s;%s" % ( masterLabel, childLabel )  
 
         return "spent;other"
