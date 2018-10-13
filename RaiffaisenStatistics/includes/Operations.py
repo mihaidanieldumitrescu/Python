@@ -50,10 +50,10 @@ class EntriesCollection:
         for elem in self.entries:
             for pair in elem.rightListLabels:
                 if '_soldPrecendent' == pair[0]:
-                    soldPrecendent = (pair[1])
+                    soldPrecendent = ( int ( pair[1] ))
                     print "Found soldPrecendent '{}'".format (soldPrecendent)
         for seekedLabel in defLabels:
-            # ['_income', -100]
+            # ['_rulaj', -100]
             for pair in labelsArr:
                 if seekedLabel == pair[0]:
                     valuesArr.append ( "{: <8}".format ( int ( pair[1] * -1) ) )
@@ -63,7 +63,7 @@ class EntriesCollection:
         incomeValue = 0
         
         for pair in labelsArr:
-            if '_income'  == pair[0]:
+            if '_rulaj'  == pair[0]:
                 incomeValue = "{: <8}".format ( int ( pair[1] ) ) 
                 
         valuesToStr = ""
@@ -151,27 +151,48 @@ class EntriesCollection:
             
             self.htmlData.append ( "<div class=\"{0}\"><table><th colspan=\"4\">{1}</th>".format ( "billsAndOtherDetail", "otherDetail" ))
             
+            totals = 0
+            rulaj = 0
             for row in isEverythingElse:
-                self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row[2], "%.2f" % round(row[3] ,2) )  )
-                
+                self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row [2].title( ), "%.2f" % round(row[3] ,2) )  )
+                if row[3] <= 0:
+                    totals +=  row[3]
+                else:
+                    rulaj += row[3]
+            self.htmlData.append ( "<tr class='totals'><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( "", "", "Total spent", "%.2f" % round( totals, 2 ) )  )
+            self.htmlData.append ( "<tr class='totals'><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( "", "", "Income", "%.2f" % round( rulaj, 2 ) )  )
+
+            totals = 0
+            
             self.htmlData.append ( "</table><table style=\"margin-top: 20px;\"><th colspan=\"4\">{0}</th>".format ( "bills" ))
             
             for row in isBill:
-                self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row[2], "%.2f" % round(row[3] ,2) )  )
- 
+                self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row [2].title( ), "%.2f" % round(row[3] ,2) )  )
+                totals +=  row[3] 
+            self.htmlData.append ( "<tr class='totals'><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( "", "", "Total", "%.2f" % round( totals, 2 ) )  )
+
             self.htmlData.append ("</table></div>")
             
             # food and transport detail
+            
+
             self.htmlData.append ( "<div class=\"{0}\"><table><th colspan=\"4\">{1}</th>".format ( "foodAndTransportDetail", "transportDetail" ))
             
+            totals = 0
             for row in isTransport:
-                self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row[2], "%.2f" % round(row[3] ,2) )  )
-                
+                self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row [2].title( ), "%.2f" % round(row[3] ,2) )  )
+                totals +=  row[3] 
+            self.htmlData.append ( "<tr class='totals'><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( "", "", "Total", "%.2f" % round( totals, 2 ) )  )
+    
             self.htmlData.append ( "</table><table style=\"margin-top: 20px;\"><th colspan=\"4\">{0}</th>".format ( "foodDetail" ))
-            
+            totals = 0
             for row in isFood:
-                self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row[2], "%.2f" % round(row[3] ,2) )  )
- 
+                self.htmlData.append ( "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( row[0], row[1], row [2].title( ), "%.2f" % round(row[3] ,2) )  )
+                totals +=  row[3] 
+
+            self.htmlData.append ( "<tr class='totals'><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format ( "", "", "Total", "%.2f" % round( totals, 2 ) )  )
+            totals = 0
+            
             self.htmlData.append ("</table></div>")
         
             self.htmlData.append ("</div>")
@@ -192,6 +213,7 @@ class EntriesCollection:
                 width: 100%;
             }
             
+            .totals { background-color: lightgreen; }
             th { background-color: burlywood; }
             
             td:nth-child(1) { padding-right: 30px; }
@@ -333,7 +355,7 @@ class EntriesCollection:
                   data.addColumn('date', 'month');
                   data.addColumn('number', 'divider');
                   data.addColumn('number', 'spent');
-                  data.addColumn('number', 'income');
+                  data.addColumn('number', 'rulaj');
                   data.addColumn('number', 'soldPrecendent');
 
                   
@@ -559,17 +581,17 @@ class Operations:
                             if ( re.match ("_", lastLabel)):
                                 printEntries.rightListLabels.append ( [ "---", 0 ] )
                             
-                            # first category is called _income as lastLabel value will be _transferredTata
+                            # first category is called _rulaj as lastLabel value will be _transferredTata
                             
                             if re.match ( "_", lastLabel ):
-                                switchLabel = '_income'
+                                switchLabel = '_rulaj'
                                 incomeValue = totalCurrentLabel
                             else:
                                 switchLabel = lastLabel
                                 printEntries.rightListLabels.append ( [ "---", 0 ] )
                                 
                             printEntries.leftListSummary.append ( [switchLabel, totalCurrentLabel ] )
-                            # do not add input from income in month statistics
+                            # do not add input from rulaj in month statistics
                             
                             if not re.match ("_", lastLabel):
                                 sumOfAllLabels += totalCurrentLabel
