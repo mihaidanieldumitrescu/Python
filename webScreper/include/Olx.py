@@ -4,8 +4,61 @@ import urllib2
 import json
 import os
 
+class OlxProduct:
+	def __init__(self, link ):
+		self.title = ""
+		self.link = link
+		self.details = {}
+		self.description = []
+		self.images = []
+		self.pageCounter = 0
+		
+	def __repr__(self):
+		detailsPretty = {}
+		for key in self.details:
+			detailsPretty[key.ljust(16)] = self.details[key]
+		
+		return (
+			      ( "Title:".ljust (15) + " {}\n" +
+			        "Link:".ljust (15) + " {}\n" +
+			        "Description:".ljust (15) +" {}\n"+
+			        "Page count:".ljust (15)  + " {}\n\n"+
+
+			        "Details:".ljust (15)  +"\n{}\n\n"+
+			        "Images:".ljust (15)  + "\n{}\n"+
+			        "\n").format ( pprint.pformat( self.title, indent=4), pprint.pformat( self.link, indent=4), pprint.pformat( self.description, indent=4), pprint.pformat(self.pageCounter, indent=4),
+			                       pprint.pformat( detailsPretty, indent=4), pprint.pformat( self.images, indent=4)  ) )
+			
+	def loadPage (self):
+		headers = {'User-Agent' : 'Mozilla 5.10'}
+
+		# Create the Request.
+		request = urllib2.Request( self.link, None, headers)
+
+		content = urllib2.urlopen( request ).read().decode('utf-8', 'ignore')
+		soup = BeautifulSoup(content, 'lxml')
+		
+		# self.title
+		self.title = soup.find ( "div", { "class": "offer-titlebox"}).h1.string.strip()
+		
+		# self.description
+		self.description = soup.find ( "div", { "id": "textContent"}).p.string.strip()
+
+		# self.images
+		for div in soup.findAll ( "div", { "class": "photo-glow"}):
+			self.images.append ( div.img['src'] )
+		# self.details
+		for table in soup.findAll ( "table", { "class": "item"}):
+			if table.find ( 'a' ):
+				self.details[table.th.string] = table.strong.a.string.strip()
+			else:
+				self.details[table.th.string] = table.strong.string.strip()
+
+		# self.pageCounter
+		self.pageCounter = soup.find ( "div", { "id": "offerbottombar"}).strong.string
+
 class Olx(object):
-	def __init__(self, searchStr, limit=3):
+	def __init__(self, searchStr, limit=1):
 		self.products = []
 		self.limitPages = limit
 		self.pagesIndex = 1
@@ -27,7 +80,7 @@ class Olx(object):
 		#url = sortByDesc
 		fail = 0
 		pages = 0
-		url = "https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/?search%5Bfilter_float_price%3Afrom%5D=600&search%5Bfilter_float_price%3Ato%5D=1400"
+		url = "https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/?search%5Bfilter_float_price%3Afrom%5D=2000&search%5Bfilter_float_price%3Ato%5D=7000"
 		#url = "https://www.olx.ro/oferte/q-asus-transformer/"
 		while url != "":
 
@@ -51,15 +104,16 @@ class Olx(object):
 				pages += 1
 			
 			for link in frames:
+			    productLink = link.a['href']
 			    productTitle = link.strong.string 
 			    productPrice = ""
 			    priceArr = ( link.find_all( 'p', { "class" : "price"}))
 			    if len ( priceArr):
 			        productPrice = int ( priceArr[0].strong.string.encode('utf-8').replace(' \xe2\x82\xae','').replace(' \xe2\x82\xac','').replace(' ' ,'') )
- 
+
 			    else:
 			        productPrice = -1
-			    self.products.append( [ productTitle, productPrice ] )
+			    self.products.append( [ productTitle, productPrice, productLink ] )
 
 			lastPage = soup.find_all ("div", { "class": "pager rel clr"})
 			#print lastPage
@@ -85,6 +139,7 @@ class Olx(object):
 			print "Done extracting ...\n\n Found a number of {} pages and a total of {} items ".format(self.pagesIndex,len(self.products))
 		if fail:
 			print "Error: Either link is wrong or something changed in page structure!\n\n"
+			
 	def getNextPage(self, lastPage):
 		pass
 	
@@ -133,8 +188,8 @@ class OlxCars( Olx ):
 				if len ( self.statistics[carModel]['prices'] ) :
 					self.statistics[carModel]['average'] = tmpSum / len ( self.statistics[carModel]['prices'] )
 		sortedList.append (otherCars)
-		self.pp.pprint( sortedList )
-		self.pp.pprint (self.statistics)
+		#self.pp.pprint( sortedList )
+		#self.pp.pprint (self.statistics)
 	
 	def writeResults(self):
 		with open ("olxCarsResults.json", "w") as f:
@@ -151,4 +206,3 @@ class OlxCars( Olx ):
 				finalString += word + " "
 		return finalString
 	
- 
