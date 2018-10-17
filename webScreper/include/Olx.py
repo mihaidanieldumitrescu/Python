@@ -2,61 +2,96 @@ from bs4 import BeautifulSoup
 import pprint
 import urllib2
 import json
-import os
+import os,re
 
 class OlxProduct:
-	def __init__(self, link ):
+	def __init__(self, link="https://www.olx.ro/oferta/masina-renault-megane-IDbEIBo.html" ):
 		self.title = ""
-		self.link = link
+		self.link = link.split("#")[0] if len ( link.split("#") ) else link
+		self.price = 0
 		self.details = {}
 		self.description = []
 		self.images = []
 		self.pageCounter = 0
 		
+		print "(OlxProduct contructor) Link is {}\n".format (self.link)
+
 	def __repr__(self):
 		detailsPretty = {}
 		for key in self.details:
 			detailsPretty[key.ljust(16)] = self.details[key]
 		
 		return (
-			      ( "Title:".ljust (15) + " {}\n" +
-			        "Link:".ljust (15) + " {}\n" +
-			        "Description:".ljust (15) +" {}\n"+
-			        "Page count:".ljust (15)  + " {}\n\n"+
+					( "Title:".ljust (15) + " {}\n" +
+					"Link:".ljust (15) + " {}\n" +
+					"Description:".ljust (15) +" {}\n"+
+					"Page count:".ljust (15)  + " {}\n\n"+
 
-			        "Details:".ljust (15)  +"\n{}\n\n"+
-			        "Images:".ljust (15)  + "\n{}\n"+
-			        "\n").format ( pprint.pformat( self.title, indent=4), pprint.pformat( self.link, indent=4), pprint.pformat( self.description, indent=4), pprint.pformat(self.pageCounter, indent=4),
-			                       pprint.pformat( detailsPretty, indent=4), pprint.pformat( self.images, indent=4)  ) )
+					"Details:".ljust (15)  +"\n{}\n\n"+
+					"Images:".ljust (15)  + "\n{}\n"+
+					"\n").format ( pprint.pformat( self.title, indent=4), pprint.pformat( self.link, indent=4), pprint.pformat( self.description, indent=4), pprint.pformat(self.pageCounter, indent=4),
+								   pprint.pformat( detailsPretty, indent=4), pprint.pformat( self.images, indent=4)  ) )
 			
 	def loadPage (self):
-		headers = {'User-Agent' : 'Mozilla 5.10'}
-
-		# Create the Request.
-		request = urllib2.Request( self.link, None, headers)
-
-		content = urllib2.urlopen( request ).read().decode('utf-8', 'ignore')
-		soup = BeautifulSoup(content, 'lxml')
 		
-		# self.title
-		self.title = soup.find ( "div", { "class": "offer-titlebox"}).h1.string.strip()
-		
-		# self.description
-		self.description = soup.find ( "div", { "id": "textContent"}).p.string.strip()
+		if re.search ( r'https?://www.olx.ro/oferta' ,self.link ):
+			headers = {'User-Agent' : 'Mozilla 5.10'}
+			
+			# Create the Request.
+			request = urllib2.Request( self.link, None, headers)
+	
+			content = urllib2.urlopen( request ).read()
+			soup = BeautifulSoup(content, 'lxml')
+			
+			# self.title
+			self.title = soup.find ( "div", { "class": "offer-titlebox"}).h1.string.strip()
+			
+			# self.price
+			self.price = soup.find( "div", { "class" : "price-label" } ).strong.string
+			# self.description
+			self.description = soup.find ( "div", { "id": "textContent"}).p.text.strip()
+	
+			# self.images
+			for div in soup.findAll ( "div", { "class": "photo-glow"}):
+				if type ( div.img ) != type ( None ):
+					self.images.append ( div.img['src'] )
 
-		# self.images
-		for div in soup.findAll ( "div", { "class": "photo-glow"}):
-			self.images.append ( div.img['src'] )
-		# self.details
-		for table in soup.findAll ( "table", { "class": "item"}):
-			if table.find ( 'a' ):
-				self.details[table.th.string] = table.strong.a.string.strip()
-			else:
-				self.details[table.th.string] = table.strong.string.strip()
-
-		# self.pageCounter
-		self.pageCounter = soup.find ( "div", { "id": "offerbottombar"}).strong.string
-
+			# self.details
+			for table in soup.findAll ( "table", { "class": "item"}):
+				if table.find ( 'a' ):
+					self.details[table.th.string] = table.strong.a.string.strip()
+				else:
+					if type ( table.strong ) != type ( None ):
+						self.details[table.th.string] = table.strong.string.strip()
+	
+			# self.pageCounter
+			self.pageCounter = soup.find ( "div", { "id": "offerbottombar"}).strong.string
+		else:
+			print "(OlxProduct) Error: Not an olx link!\n"
+			
+	def toHtmldiv (self):
+		if re.search ( r'https?://www.olx.ro/oferta' ,self.link ):
+			div = [ "<div class='olx-product'>\n" ]
+			title = "<h3><a href='" + self.link + "' >" + self.price.encode ( 'ascii', 'replace' ) + " euro - " + self.title + "</a></h3>\n\n";
+			description = "<p>" + self.description + "</p>\n"
+			details =     "<p>An de fabricatie: {} - Rulaj: {} - Capacitate: {}".format ( self.details['An de fabricatie'].encode('ascii', 'replace') if self.details.has_key('An de fabricatie') else "N/A",
+																						  self.details['Rulaj'].encode('ascii', 'replace') if self.details.has_key('Rulaj') else "N/A",
+																						  self.details['Capacitate motor'].encode('ascii', 'replace') if self.details.has_key('Capacitate motor') else "N/A" ) 
+			images = ( "<div class='image-gallery'>\n" +
+					
+					   "\n".join ( [ "<img src ='"+ x +"' height='200' ></img>" for x in self.images ] ) +
+					 "</div>" )
+			
+			div.append ( title )
+			div.append ( details )
+			div.append ( description )
+	
+			div.append ( images )
+			div.append ("</div>")
+			return "\n".join ( div )
+		else:
+			return ""
+	
 class Olx(object):
 	def __init__(self, searchStr, limit=1):
 		self.products = []
@@ -104,16 +139,21 @@ class Olx(object):
 				pages += 1
 			
 			for link in frames:
-			    productLink = link.a['href']
-			    productTitle = link.strong.string 
-			    productPrice = ""
-			    priceArr = ( link.find_all( 'p', { "class" : "price"}))
-			    if len ( priceArr):
-			        productPrice = int ( priceArr[0].strong.string.encode('utf-8').replace(' \xe2\x82\xae','').replace(' \xe2\x82\xac','').replace(' ' ,'') )
+				productLink = link.a['href'].split("#")[0] if len ( link.a['href'].split("#") ) else link.a['href']
+				productTitle = link.strong.string 
+				productPrice = ""
+				priceArr = ( link.find_all( 'p', { "class" : "price"}))
+				
+				if re.search (r'www.autovit.ro', productLink):
+					print "Skipping autovit link {} \n".format (productLink) 
+					next
+					
+				if len ( priceArr):
+					productPrice = int ( priceArr[0].strong.string.encode('utf-8').replace(' \xe2\x82\xae','').replace(' \xe2\x82\xac','').replace(' ' ,'') )
 
-			    else:
-			        productPrice = -1
-			    self.products.append( [ productTitle, productPrice, productLink ] )
+				else:
+					productPrice = -1
+				self.products.append( [ productTitle, productPrice, productLink ] )
 
 			lastPage = soup.find_all ("div", { "class": "pager rel clr"})
 			#print lastPage
@@ -156,12 +196,14 @@ class OlxCars( Olx ):
 	
 	def __init__(self):
 		searchlink = "https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/?search%5Bfilter_float_price%3Afrom%5D=600&search%5Bfilter_float_price%3Ato%5D=1400"
-		Olx.__init__( self, searchlink, 3 )
+		Olx.__init__( self, searchlink, 1 )
 		self.pp = pprint.PrettyPrinter( indent=4)
 		self.statistics = { "otherCars" : { "prices": [], "occurences": 0} }
+		self.productDetailsArr = [] 
 		self.loadProducts()
 		self.filterWordsCarsModels = json.load( open( os.path.join (os.environ['OneDrive'], "PythonData", "config", "olx_cars.json")))
 		self.sortByModel()
+		self.readProductDetails()
 		self.writeResults()
 		
 	def sortByModel(self):
@@ -190,12 +232,22 @@ class OlxCars( Olx ):
 		sortedList.append (otherCars)
 		#self.pp.pprint( sortedList )
 		#self.pp.pprint (self.statistics)
-	
+		
+	def readProductDetails (self):
+		for productArr in self.products:
+			if productArr[2]:
+				obj = OlxProduct( productArr[2] )
+				obj.loadPage()
+				self.productDetailsArr.append ( obj )
+			
 	def writeResults(self):
 		with open ("olxCarsResults.json", "w") as f:
-			f.write ( json.dumps(self.products,sort_keys=True, indent=4 ) )
+			f.write ( json.dumps(self.products, sort_keys=True, indent=4 ) )
 		with open ("olxCarStatistics.json", "w") as f:
-			f.write ( json.dumps(self.statistics,sort_keys=True, indent=4 ) )
+			f.write ( json.dumps(self.statistics, sort_keys=True, indent=4 ) )
+		with open ("reportCars.html", "w") as f:
+			f.write ( "\n\n".join ( [ x.toHtmldiv().encode('ascii', 'replace') for x in self.productDetailsArr ] ) )
+		
 		print "OBS: Where are the Other car category?\n\n"
 			
 	def filterDesc(self, description):
