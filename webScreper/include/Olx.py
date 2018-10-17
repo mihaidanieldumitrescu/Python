@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from codecs import open
 import pprint
 import urllib2
 import json
@@ -44,10 +45,17 @@ class OlxProduct:
 			soup = BeautifulSoup(content, 'lxml')
 			
 			# self.title
-			self.title = soup.find ( "div", { "class": "offer-titlebox"}).h1.string.strip()
-			
+			if soup.find ( "div", { "class": "offer-titlebox"}):
+				self.title = soup.find ( "div", { "class": "offer-titlebox"}).h1.text.strip()
+			else:
+				self.title = "n/a" 
 			# self.price
-			self.price = soup.find( "div", { "class" : "price-label" } ).strong.string
+			if soup.find( "div", { "class" : "price-label" } ):
+				self.price = soup.find( "div", { "class" : "price-label" } ).strong.text
+			elif soup.find( "div", { "class" : "pricelabel" } ):
+				self.price  = soup.find( "div", { "class" : "pricelabel" } ).strong.text
+			else:
+				self.price = "n/a"
 			# self.description
 			self.description = soup.find ( "div", { "id": "textContent"}).p.text.strip()
 	
@@ -59,38 +67,43 @@ class OlxProduct:
 			# self.details
 			for table in soup.findAll ( "table", { "class": "item"}):
 				if table.find ( 'a' ):
-					self.details[table.th.string] = table.strong.a.string.strip()
+					self.details[table.th.string] = table.strong.a.text.strip()
 				else:
 					if type ( table.strong ) != type ( None ):
-						self.details[table.th.string] = table.strong.string.strip()
+						self.details[table.th.string] = table.strong.text.strip()
 	
 			# self.pageCounter
-			self.pageCounter = soup.find ( "div", { "id": "offerbottombar"}).strong.string
+			if soup.find ( "div", { "id": "offerbottombar"}):
+				self.pageCounter = soup.find ( "div", { "id": "offerbottombar"}).strong.text
+			else:
+				self.pageCounter = "n/a"
+				
 		else:
 			print "(OlxProduct) Error: Not an olx link!\n"
 			
 	def toHtmldiv (self):
 		if re.search ( r'https?://www.olx.ro/oferta' ,self.link ):
-			div = [ "<div class='olx-product'>\n" ]
-			title = "<h3><a href='" + self.link + "' >" + self.price.encode ( 'ascii', 'replace' ) + " euro - " + self.title + "</a></h3>\n\n";
-			description = "<p>" + self.description + "</p>\n"
-			details =     "<p>An de fabricatie: {} - Rulaj: {} - Capacitate: {}".format ( self.details['An de fabricatie'].encode('ascii', 'replace') if self.details.has_key('An de fabricatie') else "N/A",
-																						  self.details['Rulaj'].encode('ascii', 'replace') if self.details.has_key('Rulaj') else "N/A",
-																						  self.details['Capacitate motor'].encode('ascii', 'replace') if self.details.has_key('Capacitate motor') else "N/A" ) 
-			images = ( "<div class='image-gallery'>\n" +
+			div = [ u"<div class='olx-product'>\n" ]
+			title = u"<h3><a href='" + self.link + u"' >" + self.price + u" - " + self.title + u"</a></h3>\n\n";
+			# paragraph e singurul care foloseste metoda text in loc de string "Adus\xc4\x83 din Germania" -> "Adus\u0103 din Germania"
+			description = u"<p>" + self.description + u"</p>\n" 
+			details =     u"<p>An de fabricatie: {} - Rulaj: {} - Capacitate: {}".format ( self.details['An de fabricatie'] if self.details.has_key('An de fabricatie') else u"N/A",
+																						   self.details['Rulaj'] if self.details.has_key('Rulaj') else u"N/A",
+																						   self.details['Capacitate motor'] if self.details.has_key('Capacitate motor') else u"N/A" ) 
+			images = ( u"<div class='image-gallery'>\n" +
 					
-					   "\n".join ( [ "<img src ='"+ x +"' height='200' ></img>" for x in self.images ] ) +
-					 "</div>" )
+					   u"\n".join ( [ u"<img src ='"+ x +"' height='200' ></img>" for x in self.images ] ) +
+					 u"</div>" )
 			
 			div.append ( title )
 			div.append ( details )
 			div.append ( description )
 	
 			div.append ( images )
-			div.append ("</div>")
-			return "\n".join ( div )
+			div.append ( u"</div>")
+			return u"\n".join ( div )
 		else:
-			return ""
+			return u" "
 	
 class Olx(object):
 	def __init__(self, searchStr, limit=1):
@@ -245,8 +258,11 @@ class OlxCars( Olx ):
 			f.write ( json.dumps(self.products, sort_keys=True, indent=4 ) )
 		with open ("olxCarStatistics.json", "w") as f:
 			f.write ( json.dumps(self.statistics, sort_keys=True, indent=4 ) )
-		with open ("reportCars.html", "w") as f:
-			f.write ( "\n\n".join ( [ x.toHtmldiv().encode('ascii', 'replace') for x in self.productDetailsArr ] ) )
+		with open ("reportCars.html", "w", encoding='utf-8') as f:
+			f.write ( "<html>") 
+			f.write ( "<head>\n\t<meta charset='UTF-8'> \n\t <title>Olx-Cars Report</title>\n</head>\n<body>\n\n") 
+			f.write ( "\n\n".join ( [ x.toHtmldiv() for x in self.productDetailsArr ] ) )
+			f.write ( "</body></html>") 
 		
 		print "OBS: Where are the Other car category?\n\n"
 			
