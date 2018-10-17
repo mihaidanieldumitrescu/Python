@@ -1,5 +1,5 @@
 
-from include.Olx import Olx,OlxCars
+from include.Olx import Olx,OlxCars,OlxProduct
 from include.iaBilet import iaBilet
 from include.Travelator import Travelator
 
@@ -12,6 +12,12 @@ if len ( sys.argv ) > 1:
 		obj.loadProducts()
 	elif sys.argv[1] == "olxcars":
 		obj = OlxCars()
+	elif sys.argv[1] == "olxproduct":
+		print
+		obj = OlxProduct(link=u"https://www.olx.ro/oferta/volkswagen-passat-2002-IDaWZx7.html")
+		obj.loadPage()
+
+		
 	elif sys.argv[1] == "iabilet":
 		obj = iaBilet()
 	elif sys.argv[1] == "travelator":

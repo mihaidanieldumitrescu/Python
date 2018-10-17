@@ -91,9 +91,8 @@ class OlxProduct:
 																						   self.details['Rulaj'] if self.details.has_key('Rulaj') else u"N/A",
 																						   self.details['Capacitate motor'] if self.details.has_key('Capacitate motor') else u"N/A" ) 
 			images = ( u"<div class='image-gallery'>\n" +
-					
-					   u"\n".join ( [ u"<img src ='"+ x +"' height='200' ></img>" for x in self.images ] ) +
-					 u"</div>" )
+					   u"\n".join ( [ u"<img src ='"+ x +"' height='300' ></img>" for x in self.images ] ) +
+					   u"</div>" )
 			
 			div.append ( title )
 			div.append ( details )
@@ -103,7 +102,7 @@ class OlxProduct:
 			div.append ( u"</div>")
 			return u"\n".join ( div )
 		else:
-			return u" "
+			return u"<p>-Page empty-\n\n"
 	
 class Olx(object):
 	def __init__(self, searchStr, limit=1):
