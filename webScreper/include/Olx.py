@@ -57,7 +57,7 @@ class OlxProduct:
 			else:
 				self.price = "n/a"
 			# self.description
-			self.description = soup.find ( "div", { "id": "textContent"}).p.text.strip()
+			self.description = soup.find ( "div", { "id": "textContent"}).text.strip()
 	
 			# self.images
 			for div in soup.findAll ( "div", { "class": "photo-glow"}):
