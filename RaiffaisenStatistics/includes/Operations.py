@@ -527,8 +527,8 @@ class Operations:
             # match values, print others
             for currLabel in keyLabels:
                 for currEntry in monthlyReport:
-                    if ( currEntry.label == currLabel ):
-
+                    if(currEntry.label == currLabel):
+                            
                         print "<...> ;{};{};{}-{}-{};{};;".format ( currEntry.label.replace(";","."), currEntry.description, currEntry.year, currEntry.month, currEntry.day, currEntry.value )
                         logging.info ( "ENTRY: {}-{} | Record {}-{}-{} | {} | {} | {}".format ( currYear, currMonth, currEntry.year, currEntry.month, currEntry.day,
                                                                                                 currEntry.label.ljust (15), currEntry.description.ljust (35), currEntry.value ) )
