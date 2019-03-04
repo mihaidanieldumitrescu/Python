@@ -5,8 +5,8 @@ import json
 import os
 import logging
 
-from Entries import Entries
-from EntryNew import EntryNew
+from includes.Entries import Entries
+from includes.EntryNew import EntryNew
 from datetime import date
 
 class EntriesCollection:
@@ -51,8 +51,7 @@ class EntriesCollection:
             for pair in elem.rightListLabels:
                 if '_soldPrecendent' == pair[0]:
                     soldPrecendent = (int(pair[1]))
-                    print "Found soldPrecendent '{}'".format(soldPrecendent)
-        for seekedLabel in defLabels:
+                    print("Found soldPrecendent '{}'".format(soldPrecendent))        for seekedLabel in defLabels:
             # ['_rulaj', -100]
             for pair in labelsArr:
                 if seekedLabel == pair[0]:
@@ -432,9 +431,9 @@ class PrintEntries:
 
         columnSize = 50
         monthStatistics = []
-        print "%s, %s, %s" % ( self.header[0], self.header[1], self.header[2] )
-        print '-' * 10 + "\n"
-        # merge and print labels from liquidation and advance for current month
+        print("%s, %s, %s" % ( self.header[0], self.header[1], self.header[2] ))
+        print('-' * 10 + "\n")
+        # merge and print(labels from liquidation and advance for current month)
 
         index = 0
         for item in self.rightListLabels:
@@ -465,8 +464,8 @@ class PrintEntries:
             monthStatistics.append ( "%s | %s " % ( leftElement, rightElement ) )
 
         if monthStatistics :
-                print "\n".join ( monthStatistics )
-                print
+                print("\n".join ( monthStatistics ))
+                print()
 
 class Operations:
 
@@ -524,12 +523,12 @@ class Operations:
             for currLabel in keyLabels:
                 labelsMonthlyValuesDict[currLabel] = 0
 
-            # match values, print others
+            # match values, print(others)
             for currLabel in keyLabels:
                 for currEntry in monthlyReport:
                     if(currEntry.label == currLabel):
                             
-                        print "<...> ;{};{};{}-{}-{};{};;".format ( currEntry.label.replace(";","."), currEntry.description, currEntry.year, currEntry.month, currEntry.day, currEntry.value )
+                        print("<...> ;{};{};{}-{}-{};{};;".format ( currEntry.label.replace(";","."), currEntry.description, currEntry.year, currEntry.month, currEntry.day, currEntry.value ))
                         logging.info ( "ENTRY: {}-{} | Record {}-{}-{} | {} | {} | {}".format ( currYear, currMonth, currEntry.year, currEntry.month, currEntry.day,
                                                                                                 currEntry.label.ljust (15), currEntry.description.ljust (35), currEntry.value ) )
                         printEntries.monthEntryData.append ( ( "{}-{}-{}".format ( currEntry.year, currEntry.month, currEntry.day),
@@ -600,7 +599,7 @@ class Operations:
                             totalCurrentLabel = 0
 
                         else:
-                            pass # print "Exception in lastlabel '{}' !".format ( lastLabel )
+                            pass # print("Exception in lastlabel '{}' !".format ( lastLabel ))
 
                     # for each label add to month
                     totalCurrentLabel += labelsMonthlyValuesDict[label]
@@ -632,10 +631,10 @@ class Operations:
                 generateReportHTML.addMonthEntry(printEntries)
                 generateReportHTML.addChartRow(date(currYear, currMonth, 5), printEntries. leftListSummary)
             if 0:
-                print "len values: %s %s \n" % (len(bufferMonth['leftOtherOp']), len(self.rightOtherODescription))
-                print pprint.pformat(bufferMonth['leftOtherOp'])
-                print pprint.pformat(self.rightOtherODescription)
-                print "\n"
+                print("len values: %s %s \n" % (len(bufferMonth['leftOtherOp']), len(self.rightOtherODescription)))
+                print(pprint.pformat(bufferMonth['leftOtherOp']))
+                print(pprint.pformat(self.rightOtherODescription))
+                print("\n")
 
             if sumOfAllLabels != 0:
 
@@ -646,8 +645,3 @@ class Operations:
         generateReportHTML.writeHtmlReport()
 
             #self.pp.pprint( bufferMonth )
-
-    def __del__(self):
-
-        if self.errorString:
-            print "Following errors have been found after run: \n\n" + self.errorString

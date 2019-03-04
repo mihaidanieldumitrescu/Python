@@ -1,6 +1,6 @@
 from html import HTML
-from Entries import Entries
-from EntryNew import EntryNew
+from includes.Entries import Entries
+from includes.EntryNew import EntryNew
 
 from gpcharts import figure
 from pprint import pprint
@@ -45,10 +45,10 @@ class WriteHtmlOutput:
 					allEntries.append ( EntryNew ( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]) )
 			
 			if 0:
-				print "%s | %s | %s | %s | %s | %s \n" % ( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5])
+				print("%s | %s | %s | %s | %s | %s \n" % ( elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]))
 
 		else:
-			print "File '" + inputFile + "' was not found!\n"
+			print("File '" + inputFile + "' was not found!\n")
 		
 		monthsFirstSemester  =  [ "August", "September", "October", "November", "December" ]
 		monthsSecondSemester  = [  "January", "February", "March", "April", "May", "June", "July" ]
@@ -142,7 +142,7 @@ class WriteHtmlOutput:
 
 		catData = ['Categories']
 		valuesData = ['lei']
-		for key, value in sorted(totalSpentCategory.iteritems(), key=lambda (k,v): (v,k)):
+		for key, value in sorted(totalSpentCategory.iteritems(), key=lambda k,v: (v,k)):
 			catData.append(key)
 			valuesData.append(value * -1)
 			

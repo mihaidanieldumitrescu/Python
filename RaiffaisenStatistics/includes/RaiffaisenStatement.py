@@ -54,7 +54,7 @@ class Statement(object):
 	def loadStatement(self, filename):
 		files = filename
 		fullPathToFile = os.path.join(os.environ['OneDrive'], "PythonData" ,"extrasDeCont", filename)
-		print "Statement found: '{}'".format(fullPathToFile)
+		print("Statement found: '{}'".format(fullPathToFile))
 		book = xlrd.open_workbook(fullPathToFile)
 		sh = book.sheet_by_index(0)
 		overdraftFlag = 0
@@ -77,7 +77,7 @@ class Statement(object):
 				self.data['rulaj']['Sold final'] =  currRow[3].value
 			elif rx == 16:
 				if re.search ( "Valoare plafon descoperit de cont", currRow[0].value) :
-					#print "overdraft flag set!\n"
+					#print("overdraft flag set!\n")
 					overdraftFlag = 1
 
 			elif rx == 17:
@@ -120,10 +120,10 @@ class Statement(object):
 									"Descrierea tranzactiei": cardCF + currRow[11].value
 
 								} )
-		#self.pp.pprint (self.data)
+		#self.pp.pprint((self.data))
 	def soldPrecendent(self):
 		sold = float (self.data['rulaj']['Sold initial'])
-		if self.data['rulaj'].has_key('Valoare plafon descoperit de cont'):
+		if 'Valoare plafon descoperit de cont' in self.data['rulaj']:
 			sold += float(self.data['rulaj']['Valoare plafon descoperit de cont'])
 
 		for operatie in self.data['operations']:
@@ -140,6 +140,6 @@ if __name__ == "__main__":
 	if len(sys.argv) > 1:
 		testObj.loadStatement(sys.argv[1])
 
-		print testObj.pp.pprint(testObj.data)
+		print(testObj.pp.pprint(testObj.data))
 	else:
-		print "Please specify a excel file found in 'Onedrive\PythonData\extrasDeCont' "
+		print("Please specify a excel file found in 'Onedrive\PythonData\extrasDeCont' ")

@@ -1,8 +1,8 @@
-from EntryNew import EntryNew
+from includes.EntryNew import EntryNew
 
 from html import HTML
 
-from RaiffaisenStatement import Statement
+from includes.RaiffaisenStatement import Statement
 from collections import deque
 from dateutil.relativedelta import relativedelta
 
@@ -95,14 +95,14 @@ class Entries(EntryNew):
         self.index = len(self.paymentLiquidationDatesArr) - 1
 
         if len(self.paymentLiquidationDatesArr) < 2 :
-            print "( Entries::__iter__ ) Error! paymentLiquidationDatesArr has less than two elements!"
+            print("( Entries::__iter__ ) Error! paymentLiquidationDatesArr has less than two elements!")
             sys.exit(1)
 
         logging.info("__iter__ initialized with paymentLiquidationDatesArr: \n{}\n\n".format(self.paymentLiquidationDatesArr))
 
         return self
 
-    def next(self):
+    def __next__(self):
 
         # this will iterate for each month
 
@@ -110,7 +110,7 @@ class Entries(EntryNew):
 
             begining_period_date = self.paymentLiquidationDatesArr[self.index - 1]
             end_period_date = self.paymentLiquidationDatesArr[self.index]
-            print "Reading data from '{}' to '{}' ...".format(begining_period_date, end_period_date - datetime.timedelta(days=1))
+            print("Reading data from '{}' to '{}' ...".format(begining_period_date, end_period_date - datetime.timedelta(days=1)))
             logging.info ( "__next__ '{}' -> '{}'".format (begining_period_date, end_period_date  - datetime.timedelta(days=1)))
             data = self.returnMonthSegmentData(begining_period_date, end_period_date)
 
@@ -118,16 +118,16 @@ class Entries(EntryNew):
             return data
         else:
             print
-            print "Iteration reached it's end. Last begin value is {}".format(self.paymentLiquidationDatesArr[self.index + 1])
+            print("Iteration reached it's end. Last begin value is {}".format(self.paymentLiquidationDatesArr[self.index + 1]))
             raise StopIteration
 
     def __del__(self):
         
         if self.debugOutput != "":
-            print "(Entries) Debug output: \n\n" + self.debugOutput + "\n"
+            print("(Entries) Debug output: \n\n" + self.debugOutput + "\n")
 
         if self.errorMsg != "":
-            print "(Entries) Errors found: \n\n" + self.errorMsg + "\n"
+            print("(Entries) Errors found: \n\n" + self.errorMsg + "\n")
 
     def __str__(self):
         tmp = ""
@@ -145,7 +145,7 @@ class Entries(EntryNew):
 
     def getEntriesFor(self, period, month):
 
-        # print "Looking for entries for month '" + month + "' and period '" + period + "' :\n"
+        # print("Looking for entries for month '" + month + "' and period '" + period + "' :\n")
         entriesFound = []
         for entry in self.currentYear:
             if entry.period == period and entry.month == month:
@@ -201,18 +201,19 @@ class Entries(EntryNew):
                             "  Valoare debit: %s Valoare credit: %s\n") % (operation['Data utilizarii cardului'], opDescription, self.labelMe(opDescription),
                                                                          debitValue, creditValue)
                    if self.verbosity == "high":
-                       print data
+                       print(data)
 
                    #self, period="undef", month=-1, year=-1, description.lower()="undef", value=-1, label="undef"
                    if "Trz IB conturi proprii" in opDescription:
-                       print "(Does not work!) Skipping 'Trz IB conturi proprii' entry!"
+                       print("(Does not work!) Skipping 'Trz IB conturi proprii' entry!")
                        
                        #next
                        
                    if debitValue:
                        self.newEntry(EntryNew(day=day, month=month, year=year, description=opDescription, value=-(debitValue), label=labelStr))
                    elif creditValue:
-                       #print "credit: %s : %s \n" % ( opDescription, creditValue )
+                       #print("credit: %s : %s \n" % ( opDescription, creditValue ))
+                       
                        if re.search("|".join(self.config_dict['salaryFirmName']), operation['Nume/Denumire ordonator/beneficiar'], re.IGNORECASE):
                            if (1 <= int(day) <= 15):
                                 self.newEntry(EntryNew(day=day, month=month, year=year, description=opDescription, value=creditValue, label="_salary"))
@@ -225,8 +226,8 @@ class Entries(EntryNew):
                            self.newEntry(EntryNew(day=day, month=month, year=year, description=opDescription, value=creditValue, label=whoTransfered))
                    else:
                        self.errorMsg += "Warn: No debit or credit values! \n\t* Row is: currRow\n\n"
-        print "\nDone loading statement data ...\n\n"
-           #self.pp.pprint ( statement.data )
+        print( f"\nDone loading statement data ... Found {len(self.currentYear)} entries!\n\n")
+           #self.pp.pprint((statement.data))
 
     def labelMe(self, description):
         """ Selects the correct label from json config file """
@@ -250,7 +251,7 @@ class Entries(EntryNew):
         htmlOutput = HTML()
         table = htmlOutput.table()
         for year in sorted (self.htmlFrame, reverse=True):
-            print "%s" % (year)
+            print("%s" % (year))
             tr = table.tr
             tr.td (str(year))
             for month in sorted(self.htmlFrame[year], reverse=True):
