@@ -76,7 +76,7 @@ class Statement(object):
 				self.data['rulaj']['Rulaj creditor'] =   currRow[2].value
 				self.data['rulaj']['Sold final'] =  currRow[3].value
 			elif rx == 16:
-				if re.search ( "Valoare plafon descoperit de cont", currRow[0].value) :
+				if re.search("Valoare plafon descoperit de cont", currRow[0].value) :
 					#print("overdraft flag set!\n")
 					overdraftFlag = 1
 
@@ -85,7 +85,7 @@ class Statement(object):
 					self.data['rulaj']['Valoare plafon descoperit de cont'] = currRow[0].value
 			elif rx >= 18:
 
-				if len ( currRow[1].value.split('/') ) == 3:
+				if len(currRow[1].value.split('/') ) == 3:
 					cardCF = ""
 
 					if re.search (r'5244$', currRow[10].value) and re.search ("dumitrescu", currRow[8].value, re.IGNORECASE):

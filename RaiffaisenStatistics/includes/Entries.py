@@ -1,8 +1,8 @@
-from includes.EntryNew import EntryNew
+from main.EntryNew import EntryNew as EntryNew
 
 from html import HTML
 
-from includes.RaiffaisenStatement import Statement
+from main.RaiffaisenStatement import Statement
 from collections import deque
 from dateutil.relativedelta import relativedelta
 
@@ -14,7 +14,7 @@ import os,sys
 import re
 import json
 
-class Entries(EntryNew):
+class Entries:
 
     def __init__(self, inputFile):
         #EntryNew.__init__()
@@ -106,12 +106,12 @@ class Entries(EntryNew):
 
         # this will iterate for each month
 
-        if ( self.index > 0 ) :
+        if(self.index > 0 ) :
 
             begining_period_date = self.paymentLiquidationDatesArr[self.index - 1]
             end_period_date = self.paymentLiquidationDatesArr[self.index]
             print("Reading data from '{}' to '{}' ...".format(begining_period_date, end_period_date - datetime.timedelta(days=1)))
-            logging.info ( "__next__ '{}' -> '{}'".format (begining_period_date, end_period_date  - datetime.timedelta(days=1)))
+            logging.info("__next__ '{}' -> '{}'".format (begining_period_date, end_period_date  - datetime.timedelta(days=1)))
             data = self.returnMonthSegmentData(begining_period_date, end_period_date)
 
             self.index -= 1
@@ -182,11 +182,11 @@ class Entries(EntryNew):
                    (day, month, year) = (extractStatementRegex.group(1), extractStatementRegex.group(2), extractStatementRegex.group(3))
                    soldPrecendentEntry = EntryNew(day=day, month=month, year="20{}".format(year), description="Sold precendent!", value=statement.soldPrecendent(), label="_soldPrecendent")
                    self.newEntry(soldPrecendentEntry)
-                   logging.info(" ( extractDataXLS ) Sold precendent: '{}'".format(soldPrecendentEntry))
+                   logging.info("(extractDataXLS ) Sold precendent: '{}'".format(soldPrecendentEntry))
            else:
-                   logging.warn(" ( extractDataXLS ) Date format is not what expected! Date found: '{}'".format ( statement.data['headers']['Data generare extras']))
+                   logging.warn("(extractDataXLS ) Date format is not what expected! Date found: '{}'".format(statement.data['headers']['Data generare extras']))
 
-           #logging.info ("( extractDataXLS ) For filename '{}', extracted date was '{}.{}.{}'".format ( filename, day, month, year ))
+           #logging.info ("( extractDataXLS ) For filename '{}', extracted date was '{}.{}.{}'".format(filename, day, month, year ))
 
            for operation in statement.data['operations']:
                    (day, month, year) = operation['Data utilizarii cardului'].split("/")
@@ -197,7 +197,7 @@ class Entries(EntryNew):
                    creditValue = operation['Suma credit']
                    labelStr = self.labelMe(opDescription)
 
-                   data = ( "  Data: %s Operatie: %s Eticheta: %s\n " +
+                   data =("  Data: %s Operatie: %s Eticheta: %s\n " +
                             "  Valoare debit: %s Valoare credit: %s\n") % (operation['Data utilizarii cardului'], opDescription, self.labelMe(opDescription),
                                                                          debitValue, creditValue)
                    if self.verbosity == "high":
@@ -212,7 +212,7 @@ class Entries(EntryNew):
                    if debitValue:
                        self.newEntry(EntryNew(day=day, month=month, year=year, description=opDescription, value=-(debitValue), label=labelStr))
                    elif creditValue:
-                       #print("credit: %s : %s \n" % ( opDescription, creditValue ))
+                       #print("credit: %s : %s \n" %(opDescription, creditValue ))
                        
                        if re.search("|".join(self.config_dict['salaryFirmName']), operation['Nume/Denumire ordonator/beneficiar'], re.IGNORECASE):
                            if (1 <= int(day) <= 15):
@@ -287,4 +287,4 @@ class Entries(EntryNew):
         """ Writes CSV report """
         
         with open ("report.csv", "w") as f:
-            f.write ( self.csvValues )
+            f.write(self.csvValues )
