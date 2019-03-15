@@ -6,25 +6,23 @@ from main.RaiffaisenStatement import Statement
 from collections import deque
 from dateutil.relativedelta import relativedelta
 
-import logging,datetime
+import logging
+import datetime
 import xlrd
 import glob
 import pprint
-import os,sys
+import os
+import sys
 import re
 import json
 
 class Entries:
 
-    def __init__(self, inputFile):
-        #EntryNew.__init__()
+    def __init__(self, input_file):
         self.config_dict = {}
-         #another line graph, but with two data types. Also adding title
         self.currentYear = []
-        #this is intermediary
         self.dictCurrentYear = {}
 
-        #{year}{month}{period} => value
         self.statistics = {}
         self.manualEntries = []
         self.csvValues = ""
@@ -34,19 +32,17 @@ class Entries:
         self.htmlOutput = HTML()
         self.htmlFrame = {}
         self.verbosity = "none"
-        self.pp = pprint.PrettyPrinter()
         self.errorMsg = ""
         self.debugOutput = ""
-        self.verbosity = "none"
-        
+
 
         logging.basicConfig(filename='logfile.log', filemode='w', level=logging.DEBUG)
 
-        #used mainly for manually extracted csv files
+        # used mainly for manually extracted csv files
 
-        self.extractDataXLS(inputFile)
+        self.extract_data_excel_sheets()
 
-    def getLabels(self):
+    def get_labels(self):
         labels = {}
 
         for item in self.currentYear:
@@ -57,7 +53,7 @@ class Entries:
 
         return key_list
 
-    def returnMonthData(self, year, month):
+    def return_month_data(self, year, month):
         """returns data entries from first day of the month to the last"""
 
         data = []
@@ -67,7 +63,7 @@ class Entries:
                 data.append(item)
         return data
 
-    def returnMonthSegmentData(self, begining_period_date, end_period_date):
+    def return_month_segment_data(self, begining_period_date, end_period_date):
         """this contains data from salary payment to the next salary"""
 
         data = []
@@ -76,7 +72,7 @@ class Entries:
                 data.append(item)
         return data
 
-    def returnSalaryPaymentDates(self):
+    def return_salary_payment_dates(self):
         data = []
         liquidation_dates = [datetime.date(2000, 1, 1)]  # dummy date
 
@@ -91,7 +87,7 @@ class Entries:
 
     def __iter__(self):
 
-        self.paymentLiquidationDatesArr = self.returnSalaryPaymentDates()
+        self.paymentLiquidationDatesArr = self.return_salary_payment_dates()
         self.index = len(self.paymentLiquidationDatesArr) - 1
 
         if len(self.paymentLiquidationDatesArr) < 2 :
@@ -106,13 +102,13 @@ class Entries:
 
         # this will iterate for each month
 
-        if(self.index > 0 ) :
+        if self.index > 0:
 
             begining_period_date = self.paymentLiquidationDatesArr[self.index - 1]
             end_period_date = self.paymentLiquidationDatesArr[self.index]
             print("Reading data from '{}' to '{}' ...".format(begining_period_date, end_period_date - datetime.timedelta(days=1)))
             logging.info("__next__ '{}' -> '{}'".format (begining_period_date, end_period_date  - datetime.timedelta(days=1)))
-            data = self.returnMonthSegmentData(begining_period_date, end_period_date)
+            data = self.return_month_segment_data(begining_period_date, end_period_date)
 
             self.index -= 1
             return data
@@ -135,24 +131,24 @@ class Entries:
             tmp += str(item) + "\n"
         return tmp
 
-    def retValuesDict(self):
-        tempStr = ""
+    def return_values_dict(self):
+        temp_str = ""
         for month in self.dictCurrentYear:
             for period in self.dictCurrentYear[month]:
                 for entry in self.dictCurrentYear[month][period]:
-                    tempStr += str(entry)
-        return tempStr
+                    temp_str += str(entry)
+        return temp_str
 
-    def getEntriesFor(self, period, month):
+    def get_entries_for(self, period, month):
 
         # print("Looking for entries for month '" + month + "' and period '" + period + "' :\n")
-        entriesFound = []
+        entries_found = []
         for entry in self.currentYear:
             if entry.period == period and entry.month == month:
-                entriesFound.append(entry)
-        return entriesFound
+                entries_found.append(entry)
+        return entries_found
 
-    def newEntry(self, newEnt):
+    def new_entry(self, newEnt):
         """ Add a new EntryNew object """
         self.currentYear.append(newEnt)
         self.currentYear.sort(key=lambda x: x.datelog)
@@ -161,7 +157,7 @@ class Entries:
         self.dictCurrentYear[newEnt.month][newEnt.period] = []
         self.dictCurrentYear[newEnt.month][newEnt.period].append(newEnt)
 
-    def extractDataXLS(self, dirname):
+    def extract_data_excel_sheets(self):
         """ Load data from excel statement files """
         
         files = glob.glob(os.path.join(os.environ['OneDrive'], "PythonData", "extrasDeCont", "*xls"))
@@ -175,81 +171,78 @@ class Entries:
         for filename in files:
 
            statement = Statement ()
-           statement.loadStatement(filename)
+           statement.load_statement(filename)
 
-           extractStatementRegex = re.match(r'(\d{2})/(\d{2})/(\d{2})', statement.data['headers']['Data generare extras'])
-           if extractStatementRegex:
-                   (day, month, year) = (extractStatementRegex.group(1), extractStatementRegex.group(2), extractStatementRegex.group(3))
-                   soldPrecendentEntry = EntryNew(day=day, month=month, year="20{}".format(year), description="Sold precendent!", value=statement.soldPrecendent(), label="_soldPrecendent")
-                   self.newEntry(soldPrecendentEntry)
-                   logging.info("(extractDataXLS ) Sold precendent: '{}'".format(soldPrecendentEntry))
+           extract_statement_regex = re.match(r'(\d{2})/(\d{2})/(\d{2})', statement.data['headers']['Data generare extras'])
+           if extract_statement_regex:
+                   (day, month, year) = (extract_statement_regex.group(1), extract_statement_regex.group(2), extract_statement_regex.group(3))
+                   sold_precendent_entry = EntryNew(day=day, month=month, year="20{}".format(year), description="Sold precendent!", value=statement.sold_precendent(), label="_soldPrecendent")
+                   self.new_entry(sold_precendent_entry)
+                   logging.info("(extractDataXLS ) Sold precendent: '{}'".format(sold_precendent_entry))
            else:
                    logging.warn("(extractDataXLS ) Date format is not what expected! Date found: '{}'".format(statement.data['headers']['Data generare extras']))
 
-           #logging.info ("( extractDataXLS ) For filename '{}', extracted date was '{}.{}.{}'".format(filename, day, month, year ))
+           # logging.info ("( extractDataXLS ) For filename '{}', extracted date was '{}.{}.{}'".format(filename, day, month, year ))
 
            for operation in statement.data['operations']:
                    (day, month, year) = operation['Data utilizarii cardului'].split("/")
-                   opDescription = operation['Descrierea tranzactiei'].split("|")[0]
+                   op_description = operation['Descrierea tranzactiei'].split("|")[0]
                    if re.match("OPIB", operation['Descrierea tranzactiei']):
-                      opDescription = operation['Descrierea tranzactiei'].split("|")[1]
-                   debitValue = operation['Suma debit']
-                   creditValue = operation['Suma credit']
-                   labelStr = self.labelMe(opDescription)
+                      op_description = operation['Descrierea tranzactiei'].split("|")[1]
+                   debit_value = operation['Suma debit']
+                   credit_value = operation['Suma credit']
+                   label_str = self.label_me(op_description)
 
                    data =("  Data: %s Operatie: %s Eticheta: %s\n " +
-                            "  Valoare debit: %s Valoare credit: %s\n") % (operation['Data utilizarii cardului'], opDescription, self.labelMe(opDescription),
-                                                                         debitValue, creditValue)
+                            "  Valoare debit: %s Valoare credit: %s\n") % (operation['Data utilizarii cardului'], op_description, self.label_me(op_description),
+                                                                         debit_value, credit_value)
                    if self.verbosity == "high":
                        print(data)
 
                    #self, period="undef", month=-1, year=-1, description.lower()="undef", value=-1, label="undef"
-                   if "Trz IB conturi proprii" in opDescription:
+                   if "Trz IB conturi proprii" in op_description:
                        print("(Does not work!) Skipping 'Trz IB conturi proprii' entry!")
-                       
-                       #next
-                       
-                   if debitValue:
-                       self.newEntry(EntryNew(day=day, month=month, year=year, description=opDescription, value=-(debitValue), label=labelStr))
-                   elif creditValue:
-                       #print("credit: %s : %s \n" %(opDescription, creditValue ))
+
+                   if debit_value:
+                       self.new_entry(EntryNew(day=day, month=month, year=year, description=op_description, value=-debit_value, label=label_str))
+                   elif credit_value:
+                       #print("credit: %s : %s \n" %(op_description, credit_value ))
                        
                        if re.search("|".join(self.config_dict['salaryFirmName']), operation['Nume/Denumire ordonator/beneficiar'], re.IGNORECASE):
-                           if (1 <= int(day) <= 15):
-                                self.newEntry(EntryNew(day=day, month=month, year=year, description=opDescription, value=creditValue, label="_salary"))
+                           if 1 <= int(day) <= 15:
+                                self.new_entry(EntryNew(day=day, month=month, year=year, description=op_description, value=credit_value, label="_salary"))
                            else:
-                                self.newEntry(EntryNew(day=day, month=month, year=year, period='advance', description=opDescription, value=creditValue, label="_salary"))
+                                self.new_entry(EntryNew(day=day, month=month, year=year, period='advance', description=op_description, value=credit_value, label="_salary"))
                        else:
                            whoTransfered = "_transferredInto"
-                           if re.search("dumitrescu mihail", opDescription.lower()):
+                           if re.search("dumitrescu mihail", op_description.lower()):
                                whoTransfered = "_transferredTata"
-                           self.newEntry(EntryNew(day=day, month=month, year=year, description=opDescription, value=creditValue, label=whoTransfered))
+                           self.new_entry(EntryNew(day=day, month=month, year=year, description=op_description, value=credit_value, label=whoTransfered))
                    else:
                        self.errorMsg += "Warn: No debit or credit values! \n\t* Row is: currRow\n\n"
         print( f"\nDone loading statement data ... Found {len(self.currentYear)} entries!\n\n")
-           #self.pp.pprint((statement.data))
 
-    def labelMe(self, description):
+    def label_me(self, description):
         """ Selects the correct label from json config file """
         
-        masterLabels = self.config_dict['labelDict']
+        master_labels = self.config_dict['labelDict']
 
         # {    "leisure" :  {
         #           "film": [ "cinema", "avatar media project" ] }
         # ...
 
-        for masterLabel in masterLabels:
-            for childLabel in masterLabels[masterLabel]:
-                if re.search (r"|".join(masterLabels[masterLabel][childLabel]), description.lower()):
+        for masterLabel in master_labels:
+            for childLabel in master_labels[masterLabel]:
+                if re.search (r"|".join(master_labels[masterLabel][childLabel]), description.lower()):
                     return "%s;%s" % (masterLabel, childLabel)
 
         return "spent;other"
 
-    def writeHtmlReport(self):
+    def write_html_report(self):
         """ Writes html report from entries """
 
-        htmlOutput = HTML()
-        table = htmlOutput.table()
+        html_output = HTML()
+        table = html_output.table()
         for year in sorted (self.htmlFrame, reverse=True):
             print("%s" % (year))
             tr = table.tr
@@ -260,13 +253,13 @@ class Entries:
                 tr.td (str(month))
                 tr_per = table.tr
 
-                dictLiq = self.htmlFrame[year][month]['liquidation']
-                dictAdv = { 'labelSummary' : [] }
+                dict_liq = self.htmlFrame[year][month]['liquidation']
+                dict_adv = { 'labelSummary' : [] }
                 if 0:
                     # will not be used anymore
-                    dictAdv = self.htmlFrame[year][month]['advance']
+                    dict_adv = self.htmlFrame[year][month]['advance']
 
-                for entryLiq, entryAdv in zip(dictLiq['labelSummary'], dictAdv['labelSummary']): #
+                for entryLiq, entryAdv in zip(dict_liq['labelSummary'], dict_adv['labelSummary']): #
                     tr_nr = table.tr
                     for key in entryLiq:
                         tr_nr.td(str(key))
@@ -276,14 +269,10 @@ class Entries:
                         tr_nr.td(str(key))
                         tr_nr.td(str(entryAdv[key]))
 
-                    #for entry in dictCurr['otherOperations']:
-                        #tr_per.td (str(entry))
-
-
         with open ("report.html", "w") as f:
-            f.write(str (htmlOutput))
+            f.write(str (html_output))
 
-    def writeCSVdata(self):
+    def write_csv_data(self):
         """ Writes CSV report """
         
         with open ("report.csv", "w") as f:

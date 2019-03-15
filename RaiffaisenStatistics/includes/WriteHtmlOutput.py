@@ -10,28 +10,28 @@ import json
 
 class WriteHtmlOutput:
 
-    def __init__( self ):
+    def __init__(self):
 
         self.splitPeriodsEntries = {}
         self.buffer = ""
 
     def run(self ):
 
-        self.loadEntriesCSV(os.path.join(os.environ['OneDrive'], "PythonData", "manualInput", "manual_described_operations_2015_2016_2017.csv"))
+        self.load_entries_csv(os.path.join(os.environ['OneDrive'], "PythonData", "manualInput", "manual_described_operations_2015_2016_2017.csv"))
         if not os.path.exists('output'):
             os.mkdir("output")
 
         for year in self.splitPeriodsEntries:
-            entriesForPeriod = self.splitPeriodsEntries[year]
-            statistics = self.statistics(entriesForPeriod )
-            self.overviewStatistics(entriesForPeriod, statistics )
-            #self.writeGPchart(entriesForPeriod, statistics  )
-            self.writeIndexHTML(entriesForPeriod )
+            entries_for_period = self.splitPeriodsEntries[year]
+            statistics = self.statistics(entries_for_period)
+            self.overview_statistics(entries_for_period, statistics)
+            # self.writeGPchart(entries_for_period, statistics  )
+            self.write_index_html(entries_for_period)
 
-    def loadEntriesCSV(self, inputFile):
-        allEntries = []
-        if os.path.isfile( inputFile):
-            with open(inputFile , "r") as file:
+    def load_entries_csv(self, input_file):
+        all_entries = []
+        if os.path.isfile(input_file):
+            with open(input_file, "r") as file:
                 for row in file:
                     elements = row.split(";")
 
@@ -43,123 +43,120 @@ class WriteHtmlOutput:
 
                     #    0		  1			  2		3	      4		 5
                     # liquidation;September;2017;Decathlon;-286;echipamen
-                    allEntries.append(EntryNew(elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]) )
+                    all_entries.append(EntryNew(elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]))
 
             if 0:
-                print("%s | %s | %s | %s | %s | %s \n" %(elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]))
+                print("%s | %s | %s | %s | %s | %s \n" % (elements[0], elements[1], elements[2], elements[3], elements[4], elements[5]))
 
         else:
-            print("File '" + inputFile + "' was not found!\n")
+            print("File '" + input_file + "' was not found!\n")
 
-        monthsFirstSemester  =  [ "August", "September", "October", "November", "December" ]
-        monthsSecondSemester  = [  "January", "February", "March", "April", "May", "June", "July" ]
+        months_first_semester = ["August", "September", "October", "November", "December"]
+        months_second_semester = ["January", "February", "March", "April", "May", "June", "July"]
 
         years = []
 
-        for entry in allEntries:
+        for entry in all_entries:
             # how many years are there
-            if not(entry.year in years ):
-                years.append(entry.year )
+            if not(entry.year in years):
+                years.append(entry.year)
         for year in years:
-            tmpArr = []
-            for entry in allEntries:
-                if entry.year == year and(entry.month in monthsFirstSemester ):
-                    tmpArr.append(entry )
-                elif entry.year ==(year + 1 ) and(entry.month in monthsSecondSemester ):
-                    tmpArr.append(entry )
-            self.splitPeriodsEntries[year] = tmpArr
-        return allEntries
+            tmp_arr = []
+            for entry in all_entries:
+                if entry.year == year and (entry.month in months_first_semester):
+                    tmp_arr.append(entry)
+                elif entry.year == (year + 1) and (entry.month in months_second_semester):
+                    tmp_arr.append(entry)
+            self.splitPeriodsEntries[year] = tmp_arr
+        return all_entries
 
-    def overviewStatistics(self, data, statistics):
+    def overview_statistics(self, data, statistics):
 
-        for currentPeriod in self.splitPeriodsEntries:
+        for current_period in self.splitPeriodsEntries:
 
             index = 0
-            totalSpentMonth = statistics['eachMonth']
-            totalSpentCategory = statistics['eachCategory']
-            htmlOutput = HTML()
+            total_spent_month = statistics['eachMonth']
+            total_spent_category = statistics['eachCategory']
+            html_output = HTML()
 
-            table = htmlOutput.table( style="width: 50%; padding-left: 20px" )
+            table = html_output.table(style="width: 50%; padding-left: 20px")
 
-            monthsArr  = [  "August", "September", "October", "November",
-                            "December", "January" , "February" , "March" ,
-                            "April", "May" , "June" , "July" ]
+            months_arr = ["August", "September", "October", "November", "December", "January", "February", "March",
+                            "April", "May", "June", "July"]
 
-            #for each defined period aug - july
-            for currMonth in monthsArr:
+            # for each defined period aug - july
+            for curr_month in months_arr:
 
                 index += 1
-                tdBefore = index
-                tdAfter = 12 - index
+                td_before = index
+                td_after = 12 - index
                 entries = data
 
-
-
                 for period in ["liquidation", "advance" ]:
-                    hasEntries = len(data )
-                    headerRow = table.tr (style="border: none")
-                    headerRow.td(currMonth, style="background-color: lightblue" )
-                    headerRow.td(period, style="background-color: lightblue; text-align: center" )
-                    headerRow = table.tr
-                    secondRow = table.tr
+                    has_entries = len(data )
+                    header_row = table.tr (style="border: none")
+                    header_row.td(curr_month, style="background-color: lightblue" )
+                    header_row.td(period, style="background-color: lightblue; text-align: center" )
+                    header_row = table.tr
+                    second_row = table.tr
 
                     for entryNew in data:
-                        if currMonth == entryNew.month and period == entryNew.period:
-                            thirdRow = table.tr
-                            for time in range(tdBefore):
-                                #thirdRow.td() #empty div before input
+                        if curr_month == entryNew.month and period == entryNew.period:
+                            third_row = table.tr
+                            for time in range(td_before):
+                                # third_row.td() #empty div before input
                                 pass
-                            thirdRow.td (entryNew.description)
-                            thirdRow.td (entryNew.value + " lei", style="text-align: right")
+                            third_row.td (entryNew.description)
+                            third_row.td (entryNew.value + " lei", style="text-align: right")
 
-                    for time in range( tdAfter ):
-                        #headerRow.td() #empty div after input
+                    for time in range( td_after ):
+                        #header_row.td() #empty div after input
                         pass
-                    headerRow = table.tr ()
-                    headerRow.td()
-                    headerRow.td()
-                finalRow = table.tr
-                finalRow.td( "Total:" , style="text-align: right")
-                finalRow.td(str(totalSpentMonth[currMonth] ) + " lei", style="background-color:lightgrey; text-align: right")
-                finalRow = table.tr()
-                finalRow.td()
-                finalRow.td()
+                    header_row = table.tr ()
+                    header_row.td()
+                    header_row.td()
+                final_row = table.tr
+                final_row.td( "Total:" , style="text-align: right")
+                final_row.td(str(total_spent_month[curr_month]) + " lei", style="background-color:lightgrey; text-align: right")
+                final_row = table.tr()
+                final_row.td()
+                final_row.td()
 
-            outputFilePath = os.path.join("output", "%s_%s" % (data[0].year, data[0].year + 1)  + "_overview.html" )
-            with open(outputFilePath, "w") as output:
-                output.write(str(htmlOutput ) )
+            output_file_path = os.path.join("output", "%s_%s" % (data[0].year, data[0].year + 1) + "_overview.html")
+            with open(output_file_path, "w") as output:
+                output.write(str(html_output))
 
-    def writeGPchart(self, data, statistics):
-        totalSpentCategory = statistics['eachCategory']
-        totalSpentMonth = statistics['eachMonth']
+    def write_gpchart(self, data, statistics):
+        total_spent_category = statistics['eachCategory']
+        total_spent_month = statistics['eachMonth']
 
-        monthsArr  = [ "August", "September", "October", "November",
-                       "December", "January" , "February" , "March" ,
-                       "April", "May" , "June" , "July" ]
-        os.chdir ("output")
+        months_arr = ["August", "September", "October", "November",
+                       "December", "January", "February", "March",
+                       "April", "May", "June", "July"]
+        os.chdir("output")
 
         fig = figure(title="%s_%s" % (data[0].year, data[0].year + 1) + '_labelsCharts', height=600, width=800)
         fig2 = figure(title="%s_%s" % (data[0].year, data[0].year + 1) + '_yearCharts', height=600, width=800)
 
-        catData = ['Categories']
-        valuesData = ['lei']
-        for key, value in sorted(totalSpentCategory.iteritems(), key=lambda k, v: (v, k)):
-            catData.append(key)
-            valuesData.append(value * -1)
+        cat_data = ['Categories']
+        values_data = ['lei']
+        for key, value in sorted(total_spent_category.iteritems(), key=lambda k, v: (v, k)):
+            cat_data.append(key)
+            values_data.append(value * -1)
 
-        fig.column(catData, valuesData)
-        monthData = ['Months']
-        valuesData = ['lei']
+        fig.column(cat_data, values_data)
+        month_data = ['Months']
+        values_data = ['lei']
 
-        for month in monthsArr:
-            monthData.append(month)
-            valuesData.append( totalSpentMonth[month] * -1 )
+        for month in months_arr:
+            month_data.append(month)
+            values_data.append(total_spent_month[month] * -1)
 
-        fig2.column( monthData, valuesData )
-        os.chdir ("..")
+        fig2.column(month_data, values_data)
+        os.chdir("..")
 
-    def writeIndexHTML(self, data):
-        with open(os.path.join("output", "index.html" ), "w" ) as f:
+    def write_index_html(self, data):
+        with open(os.path.join("output", "index.html"), "w") as f:
             f.write ("<html><body><h4>test</h4></body></html>")
 
     def statistics(self, data):
@@ -167,11 +164,11 @@ class WriteHtmlOutput:
         statistics['eachMonth'] = {}
         statistics['eachCategory'] = {}
 
-        monthsArr  = [ "August", "September", "October", "November",
-                        "December", "January" , "February" , "March" ,
-                        "April", "May" , "June" , "July" ]
+        months_arr = [ "August", "September", "October", "November",
+                        "December", "January", "February", "March",
+                        "April", "May", "June", "July"]
 
-        for month in monthsArr:
+        for month in months_arr:
             statistics['eachMonth'][month] = 0
 
         for entry in data:
@@ -194,19 +191,19 @@ class EntriesCollection:
         self.chartData = []
         self.chartDataBills = []
         self.chartDataTotals = []
-        self.rentValue = self.loadRentValue ()
+        self.rentValue = self.load_rent_value ()
 
-    def loadRentValue (self):
+    def load_rent_value (self):
         tmp = ""
         with open(os.path.join(os.environ['OneDrive'], "PythonData", "config", "definedLabels.json")) as f:
             tmp = json.load(f)
         return tmp['rentValue']
 
-    def addChartRow(self, date, labelsArr ):
-        dividerLineValue = 6000
+    def add_chart_row(self, date, labelsArr):
+        divider_line_value = 6000
 
         # labelsArr: [ [ labelName, value ], [ labelName, value ], [ labelName, value ], [ labelName, value ] ]
-        monthConversion = " new Date(\"{}-{:02d}-{:02d}\" )".format(date.year, date.month, date.day)
+        month_conversion = " new Date(\"{}-{:02d}-{:02d}\" )".format(date.year, date.month, date.day)
 
         '''
             data.addColumn('number', 'cash');
@@ -219,62 +216,62 @@ class EntriesCollection:
         '''
 
         control = 0
-        valuesArr = []
-        valuesTotal = 0
-        defLabels = ('cash', 'spent', 'bills', 'transport', 'food', 'leisure', 'travel')
-        soldPrecendent = 0
+        values_arr = []
+        values_total = 0
+        def_labels = ('cash', 'spent', 'bills', 'transport', 'food', 'leisure', 'travel')
+        sold_precendent = 0
         for elem in self.entries:
             for pair in elem.rightListLabels:
                 if '_soldPrecendent' == pair[0]:
-                    soldPrecendent = (int(pair[1]))
-                    print("Found soldPrecendent '{}'".format(soldPrecendent))
-        for seekedLabel in defLabels:
+                    sold_precendent = (int(pair[1]))
+                    print("Found sold_precendent '{}'".format(sold_precendent))
+        for seekedLabel in def_labels:
             # ['_rulaj', -100]
             for pair in labelsArr:
                 if seekedLabel == pair[0]:
-                    valuesArr.append ("{: <8}".format(int(pair[1] * -1)))
-                    valuesTotal += int(pair[1] * -1)
+                    values_arr.append ("{: <8}".format(int(pair[1] * -1)))
+                    values_total += int(pair[1] * -1)
                     control += 1
 
-        incomeValue = 0
+        income_value = 0
 
         for pair in labelsArr:
-            if '_rulaj'  == pair[0]:
-                incomeValue = "{: <8}".format(int(pair[1]))
+            if '_rulaj' == pair[0]:
+                income_value = "{: <8}".format(int(pair[1]))
 
-        valuesToStr = ""
-        if control == len (defLabels):
+        values_to_str = ""
+        if control == len (def_labels):
             #  [ new Date(2018, 8, 3 )
 
-            rentValue = 0
+            rent_value = 0
 
-            #  [  new Date("2018-09-05" ),  6000  , 1100    , 286     , 0       , 244     , 225     , 0       , 0        ] ,
-            self.chartData.append("\t\t\t\t[ {},  {: <6}, {: <6} ] ".format(monthConversion, dividerLineValue, ", ".join(valuesArr)))
+            #  [  new Date("2018-09-05" ),  6000  , 1100    , 286     , 0       , 244     , 225     , 0       , 0   ] ,
+            self.chartData.append("\t\t\t\t[ {},  {: <6}, {: <6} ] ".format(month_conversion, divider_line_value, ", ".join(values_arr)))
 
-            self.chartDataBills.append("\t\t\t\t[ {},  {: <6}, {: <6},  {: <6},  {: <6} ] ".format(monthConversion, dividerLineValue, self.rentValue, valuesArr[2], valuesArr[4]))
+            self.chartDataBills.append("\t\t\t\t[ {},  {: <6}, {: <6},  {: <6},  {: <6} ] ".format(month_conversion, divider_line_value, self.rentValue, values_arr[2], values_arr[4]))
             #  [  new Date("2018-09-05" ),  6000  , 1855  , 6001     ] , 2
-            self.chartDataTotals.append("\t\t\t\t[ {},  {: <6}, {: <6}, {: <6}, {: <6} ] ".format(monthConversion, dividerLineValue, valuesTotal, incomeValue , soldPrecendent))
+            self.chartDataTotals.append("\t\t\t\t[ {},  {: <6}, {: <6}, {: <6}, {: <6} ] ".format(month_conversion, divider_line_value, values_total, income_value , sold_precendent))
 
         else:
-            logging.warn("EntriesCollection::addChartRow: Error! Expected '{}' labels! \n\n Value of labelsArr is: {}".format(len(defLabels), labelsArr))
+            logging.warn("EntriesCollection::addChartRow: Error! Expected '{}' labels! \n\n Value of labelsArr is: {}".format(len(def_labels), labelsArr))
 
-    def addMonthEntry(self, month):
+    def add_month_entry(self, month):
         self.navigationHeaders.append(month.header)
         self.entries.append(month)
 
-    def chartDataToString(self, chartData):
+    def chart_data_to_string(self, chartData):
         tmp = ""
-        chartDataCpy = chartData
+        chart_data_cpy = chartData
 
-        while (len(chartDataCpy) > 0):
+        while len(chart_data_cpy) > 0:
 
-            tmp += chartDataCpy.pop()
-            if len(chartDataCpy) > 0:
+            tmp += chart_data_cpy.pop()
+            if len(chart_data_cpy) > 0:
                 tmp += ", \n"
 
         return tmp
 
-    def processData(self):
+    def process_data(self):
         head = '''<html>
                     <head>  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
                     <script src="chart.js"></script>
@@ -306,19 +303,19 @@ class EntriesCollection:
 
             self.htmlData.append("</table></div>")
 
-            isEverythingElse = []
-            isFood = []
-            isTransport = []
-            isBill = []
+            is_everything_else = []
+            is_food = []
+            is_transport = []
+            is_bill = []
             for row in entry.monthEntryData:
                 if "bills" in row[1]:
-                    isBill.append(row)
+                    is_bill.append(row)
                 elif "food" in row[1]:
-                    isFood.append(row)
+                    is_food.append(row)
                 elif "transport" in row[1]:
-                    isTransport.append(row)
+                    is_transport.append(row)
                 else:
-                    isEverythingElse.append(row)
+                    is_everything_else.append(row)
 
             # bills and spendings
 
@@ -326,7 +323,7 @@ class EntriesCollection:
 
             totals = 0
             rulaj = 0
-            for row in isEverythingElse:
+            for row in is_everything_else:
                 self.htmlData.append("<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format(row[0], row[1], row [2].title(), "%.2f" % round(row[3], 2)))
                 if row[3] <= 0:
                     totals += row[3]
@@ -339,41 +336,37 @@ class EntriesCollection:
 
             self.htmlData.append("</table><table style=\"margin-top: 20px;\"><th colspan=\"4\">{0}</th>".format("bills"))
 
-            for row in isBill:
+            for row in is_bill:
                 self.htmlData.append("<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format(row[0], row[1], row [2].title(), "%.2f" % round(row[3], 2)))
-                totals +=  row[3]
+                totals += row[3]
             self.htmlData.append("<tr class='totals'><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format("", "", "Total", "%.2f" % round( totals, 2)))
 
             self.htmlData.append("</table></div>")
 
             # food and transport detail
 
-
             self.htmlData.append("<div class=\"{0}\"><table><th colspan=\"4\">{1}</th>".format("foodAndTransportDetail", "transportDetail"))
 
             totals = 0
-            for row in isTransport:
+            for row in is_transport:
                 self.htmlData.append("<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format(row[0], row[1], row [2].title(), "%.2f" % round(row[3], 2)))
                 totals += row[3]
             self.htmlData.append("<tr class='totals'><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format( "", "", "Total", "%.2f" % round( totals, 2)))
 
             self.htmlData.append("</table><table style=\"margin-top: 20px;\"><th colspan=\"4\">{0}</th>".format("foodDetail"))
             totals = 0
-            for row in isFood:
+            for row in is_food:
                 self.htmlData.append("<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format(row[0], row[1], row [2].title(), "%.2f" % round(row[3], 2)))
                 totals += row[3]
 
             self.htmlData.append("<tr class='totals'><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format("", "", "Total", "%.2f" % round(totals, 2)))
-            totals = 0
-
             self.htmlData.append("</table></div>")
-
             self.htmlData.append("</div>")
 
         self.htmlData.append(tail)
 
-    def writeHtmlReport(self):
-        cssContents = '''
+    def write_html_report(self):
+        css_contents = '''
             h3 {
                 background-color: lightblue;
                 padding: 5px;
@@ -455,7 +448,7 @@ class EntriesCollection:
                 color: black;
             } '''
 
-        chartJS = '''
+        chart_js = '''
             google.charts.load('current', {packages: ['corechart']});
             google.charts.setOnLoadCallback(drawCategoryStacked);
             google.charts.setOnLoadCallback(drawCategorySideBySide);
@@ -566,17 +559,17 @@ class EntriesCollection:
                   chart.draw(view, options);
             }
 
-            var dataArr = [ \n\n''' + self.chartDataToString(self.chartData) + ''' \n\t\t\t];
-            var dataArr3= [ \n\n''' + self.chartDataToString(self.chartDataBills ) + ''' \n\t\t\t];
-            var dataArr2 = [ \n\n''' + self.chartDataToString(self.chartDataTotals ) + ''' \n\t\t\t];
+            var dataArr = [ \n\n''' + self.chart_data_to_string(self.chartData) + ''' \n\t\t\t];
+            var dataArr3= [ \n\n''' + self.chart_data_to_string(self.chartDataBills) + ''' \n\t\t\t];
+            var dataArr2 = [ \n\n''' + self.chart_data_to_string(self.chartDataTotals) + ''' \n\t\t\t];
 
         '''
 
         with open("main.css", "w") as f:
-            f.write(cssContents)
+            f.write(css_contents)
 
         with open("chart.js", "w" ) as f:
-            f.write(chartJS)
+            f.write(chart_js)
 
         with open("reportLatest.html", "w") as f:
             f.write("\n".join(self.htmlData))

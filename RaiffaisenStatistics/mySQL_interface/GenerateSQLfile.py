@@ -1,4 +1,7 @@
+# BRANCH IS REDESIGN
+
 from main.EntryNew import EntryNew
+
 
 class GenerateSQLfile:
 
