@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 from codecs import open
 import pprint
-import urllib2
+import requests
 import json
 import os,re
 
@@ -15,7 +15,7 @@ class OlxProduct:
 		self.images = []
 		self.pageCounter = 0
 		
-		print "(OlxProduct contructor) Link is {}\n".format (self.link)
+		print(f"(OlxProduct contructor) Link is {self.link}\n")
 
 	def __repr__(self):
 		detailsPretty = {}
@@ -37,12 +37,10 @@ class OlxProduct:
 		
 		if re.search ( r'https?://www.olx.ro/oferta' ,self.link ):
 			headers = {'User-Agent' : 'Mozilla 5.10'}
-			
-			# Create the Request.
-			request = urllib2.Request( self.link, None, headers)
-	
-			content = urllib2.urlopen( request ).read()
-			soup = BeautifulSoup(content, 'lxml')
+ 
+			content = requests.get(self.link)
+
+			soup = BeautifulSoup(content)
 			
 			# self.title
 			if soup.find ( "div", { "class": "offer-titlebox"}):
@@ -79,7 +77,7 @@ class OlxProduct:
 				self.pageCounter = "n/a"
 				
 		else:
-			print "(OlxProduct) Error: Not an olx link!\n"
+			print ("(OlxProduct) Error: Not an olx link!\n")
 			
 	def toHtmldiv (self):
 		if re.search ( r'https?://www.olx.ro/oferta' ,self.link ):
@@ -118,7 +116,7 @@ class Olx(object):
 			self.products = json.load ( f )
 			
 		for product in self.products:
-			print "{} {}".format ( product[0].ljust(20), str( product[1]).rjust(5))
+			print (f"{product[0].ljust(20)} {str( product[1]).rjust(5)}")
 		
 		
 	def loadProducts ( self ):
@@ -131,22 +129,19 @@ class Olx(object):
 		#url = "https://www.olx.ro/oferte/q-asus-transformer/"
 		while url != "":
 
-			print "Attempting to open the following url: '%s' \n\n" % ( url )
+			print (f"Attempting to open the following url: '{url}' \n\n")
 
 			# Add your headers
 			headers = {'User-Agent' : 'Mozilla 5.10'}
+			content = requests.get(url, data=headers).string
 
-			# Create the Request.
-			request = urllib2.Request(url, None, headers)
-
-			content = urllib2.urlopen( request ).read()
-			soup = BeautifulSoup(content, 'lxml')
+			soup = BeautifulSoup(content)
 			url = ""
 			
 			frames = soup.find_all('tr', {"class" : "wrap"})
 			if len ( frames ) == 0:
 				fail = 1
-				with open ("dump_{}.html".format(pages), "w") as f:
+				with open ("dump_{}.html".format(pages), "w", encoding='utf-8') as f:
 					f.write (str(soup))
 				pages += 1
 			
@@ -157,8 +152,8 @@ class Olx(object):
 				priceArr = ( link.find_all( 'p', { "class" : "price"}))
 				
 				if re.search (r'www.autovit.ro', productLink):
-					print "Skipping autovit link {} \n".format (productLink) 
-					next
+					print ("Skipping autovit link {} \n".format (productLink)) 
+					continue
 					
 				if len ( priceArr):
 					productPrice = int ( priceArr[0].strong.string.encode('utf-8').replace(' \xe2\x82\xae','').replace(' \xe2\x82\xac','').replace(' ' ,'') )
@@ -185,21 +180,20 @@ class Olx(object):
 					else:
 						url = ""
 				except ValueError:
-					print "Error in link next page\n\n %s \n" % ( linkNextPage )
-					print ValueError
+					print ("Error in link next page\n\n {linkNextPage} \n")
+					print (ValueError)
 				self.limitPages -= 1
-			print "Done extracting ...\n\n Found a number of {} pages and a total of {} items ".format(self.pagesIndex,len(self.products))
+			print ("Done extracting ...\n\n Found a number of {} pages and a total of {} items ".format(self.pagesIndex,len(self.products)))
 		if fail:
-			print "Error: Either link is wrong or something changed in page structure!\n\n"
+			print ("Error: Either link is wrong or something changed in page structure!\n\n")
 			
 	def getNextPage(self, lastPage):
 		pass
-	
 
 	def printResults(self):
 		
 		for product in self.products:
-			print "%s %s" % ( product['price'].ljust(10), product['desc'] )
+			print (f"{product['price'].ljust(10)}, {product['desc']}")
 
 			#print str ( linkNextPage )
 
@@ -224,7 +218,7 @@ class OlxCars( Olx ):
 		otherCars = []
 		for carBuilder in self.filterWordsCarsModels[0]:
 			for carModel in self.filterWordsCarsModels[0][carBuilder]:
-				print "Looking for {} ...".format ( carModel )
+				print (f"Looking for {carModel} ...")
 				self.statistics[carModel] = { "occurences" : 0, "prices" : [] }
 				for productDesc in self.products:
 					if carModel in productDesc[0].lower():
@@ -263,7 +257,7 @@ class OlxCars( Olx ):
 			f.write ( "\n\n".join ( [ x.toHtmldiv() for x in self.productDetailsArr ] ) )
 			f.write ( "</body></html>") 
 		
-		print "OBS: Where are the Other car category?\n\n"
+		print ("OBS: Where are the Other car category?\n\n")
 			
 	def filterDesc(self, description):
 		filterWords = [ 'vind', 'vand', 'cumpar', 'schimb', 'masina' , 'cu' , 'oferta', 'pret', 'sau' ]

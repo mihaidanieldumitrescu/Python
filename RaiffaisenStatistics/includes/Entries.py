@@ -107,7 +107,7 @@ class Entries:
             begining_period_date = self.paymentLiquidationDatesArr[self.index - 1]
             end_period_date = self.paymentLiquidationDatesArr[self.index]
             print("Reading data from '{}' to '{}' ...".format(begining_period_date, end_period_date - datetime.timedelta(days=1)))
-            logging.info("__next__ '{}' -> '{}'".format (begining_period_date, end_period_date  - datetime.timedelta(days=1)))
+            logging.info("__next__ '{}' -> '{}'".format (begining_period_date, end_period_date - datetime.timedelta(days=1)))
             data = self.return_month_segment_data(begining_period_date, end_period_date)
 
             self.index -= 1

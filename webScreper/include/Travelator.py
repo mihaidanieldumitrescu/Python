@@ -1,8 +1,8 @@
 from bs4 import BeautifulSoup
-from Results import Results, ResultObject
-from pushbulletapi import PushbulletApi
+from include.Results import Results, ResultObject
+from pushbullet import Pushbullet
 
-import urllib2
+import urllib3
 import json
 import re
 import os,string
@@ -30,9 +30,9 @@ class Travelator:
 			
 		if filterDict['Travelator']:
 			for keyword in  filterDict['Travelator']['keywords']:
-				print "Looking for {}  ...\n". format( keyword )
-				for ( country, title, link) in vacations:
-					print "Current country: '{}' ".format (country)
+				print (f"Looking for {keyword}  ...\n")
+				for country, title, link in vacations:
+					print (f"Current country: '{country}'")
 					if keyword in country:
 						if filterDict['Travelator']['notification'] == 'on':
 							description = "Jackpot! Vacation in '%s' found!\n\n  Link: %s" %  ( country, link )
@@ -44,14 +44,14 @@ class Travelator:
 		for ( country,title, link) in self.loadTitles():
 			if country != "":
 				if self.debug:
-					print "Found '{}'! sending it to db ...\n".format (country)
+					print ("Found '{country}'! sending it to db ...\n")
 				isNewEntry = self.res.insertItem( SITE_NAME, [ country, title, link ] )
 				if isNewEntry:
 
-					description = "Found new vacation in '%s'!\n\n Link: %s" %  ( country, link )
+					description = f"Found new vacation in '{country}'!\n\n Link: {link}"
 					item = TravelatorObject( description, link )
-					print item
-					if (  not self.debug or self.debugFlags['callPushbullet'] ):
+					print (item)
+					if not self.debug or self.debugFlags['callPushbullet']:
 						self.pb.pushSomething( item )
 						
 	def loadTitles (self):
@@ -59,15 +59,15 @@ class Travelator:
 		url = "http://www.travelator.ro"
 		if url != "":
 
-			print "Attempting to open the following url: '%s' \n\n" % ( url )
+			print (f"Attempting to open the following url: '{url}' \n\n")
 			
 			headers = {'User-Agent' : 'Mozilla 5.10'}
-			request = urllib2.Request(url, None, headers)
+			request = urllib3.Request(url, None, headers)
 
-			content = urllib2.urlopen( request ).read()
+			content = urllib3.urlopen( request ).read()
 			soup = BeautifulSoup(content, 'lxml')
 	
-			print "Finding first page ... \n\n"
+			print ("Finding first page ... \n\n")
 			frames = soup.div.find_all('h3', {"class" : "post-title"})
 
 			for link in frames:

@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from pushbulletapi import PushbulletApi
+from pushbullet import Pushbullet
 
 class ResultObject:
     def __init__(self, description, link):
@@ -36,14 +36,14 @@ class Results:
             if re.match ( site, siteName, re.IGNORECASE):
                 if item in self.data[site]:
                     if self.debug:
-                        print "Item not added as it was already there"
+                        print ("Item not added as it was already there")
                     return 0
                 else:
                     #todo: call pushbullet function
                     #self.pb.pushSomething ( siteName, message, link )
 
                     if self.debug:
-                        print "Adding new item to '%s' \n\n %s" % ( siteName, item )
+                        print ("Adding new item to '{siteName}' \n\n {item}")
 
                     self.data[site].append(item)
                     #self.pb.pushSomething ( item )
@@ -55,6 +55,6 @@ class Results:
 
         jsonPath = os.path.join ( os.environ['OneDrive'], "PythonData", "config", "results.json" )
         if self.writeJsonFlag:
-            print "Writing output to json file ...\n"
+            print ("Writing output to json file ...\n")
             with open ( jsonPath,"w") as f:
                 f.write ( json.dumps( self.data, indent=4 ) ) 

@@ -1,10 +1,10 @@
 from bs4 import BeautifulSoup
 from datetime import datetime,timedelta
-from Results import Results, ResultObject
+from include.Results import Results, ResultObject
 
 import sys
 import os
-import urllib2
+import urllib3
 import json
 
 import re
@@ -21,10 +21,11 @@ class iaBilet:
 		
 	def __del__(self):
 		if len ( self.matches ) > 0:
-			print "\nmatches found\n\n"
-			print "\n".join( self.matches )
-			
-			print "\n"
+			print()
+			print ("matches found\n\n")
+			print ("\n".join(self.matches))
+			      
+			print ()
 		#print "\n".join( self.generateDates() )
 	def __str__(self):
 		tmp = "Printing list of extracted objects: \n\n"
@@ -38,9 +39,9 @@ class iaBilet:
 		for ( year, month ) in dates:
 			parameter = "%s/%s" % ( year, month )
 			url = "http://www.iabilet.ro/bilete/" + parameter
-			print url
+			print (url)
 
-			content = urllib2.urlopen(url).read()
+			content = urllib3.urlopen(url).read()
 			soup = BeautifulSoup(content,"lxml")
 			eventList = soup.find_all("div", { "class": "event-list" })
 			for event in eventList:
@@ -51,7 +52,7 @@ class iaBilet:
 					separateJson = ( frame.string.split("\n"))[2]
 					data = json.loads( separateJson )
 					(cityName, eventDate, eventName ) = ( data['location']['address']['addressLocality'].encode('utf-8','ignore'), data['startDate'].encode('utf-8','ignore'), data['name'].encode('utf-8','ignore') )
-					print  "%s %s %s" % (cityName.ljust(10), eventDate.ljust(8), eventName)
+					print (f"{cityName:<10} {eventDate:<10} {eventName}")
 					self.events.append ( { "cityName" :  cityName, "eventDate" : eventDate, "eventName" : eventName  } )
 					for showType in self.config:
 						for showName in self.config[showType]:
@@ -59,7 +60,7 @@ class iaBilet:
 								self.matches.append( "%s %s %s" % (cityName.ljust(10), eventDate.ljust(8), eventName) )
 		#print "Matches found: \n\n" + str( self.matches ) ;
 		if len (self.events) == 0:
-			print "Error: Cannot extract anything from page!\n"
+			print ("Error: Cannot extract anything from page!\n")
 			
 	def loadConfig (self):
 		with open ( os.path.join ( os.environ['OneDrive'], "PythonData", "config", "webScraper.json") ) as f:

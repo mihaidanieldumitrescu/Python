@@ -25,7 +25,7 @@ if len ( sys.argv ) > 1:
 		obj.loadTitles()
 		obj.filter()
 	else:
-		print "Unknown parameter!"
+		print("Unknown parameter!")
 else:
-	print "Please specify site name!"
+	print("Please specify site name!")
 

@@ -236,9 +236,7 @@ class Operations:
                 print_entries.leftListSummary.append(['_remaining_{}-{}'.format(last_entry_date[-1], curr_month), remaining_value])
                 # print_entries.printTerminal()
                 generate_report_html.add_month_entry(print_entries)
-                print(type(curr_year), type(curr_month))
-                exit()
-                generate_report_html.add_chart_row(date(curr_year, curr_month, 5), print_entries.leftListSummary)
+                generate_report_html.add_chart_row(date(curr_year, int(curr_month), 5), print_entries.leftListSummary)
             if 0:
                 print("len values: %s %s \n" % (len(bufferMonth['leftOtherOp']), len(self.rightOtherODescription)))
                 print(pprint.pformat(bufferMonth['leftOtherOp']))
