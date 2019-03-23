@@ -3,18 +3,16 @@ from main.EntryNew import EntryNew as EntryNew
 from html import HTML
 
 from main.RaiffaisenStatement import Statement
-from collections import deque
-from dateutil.relativedelta import relativedelta
+from json_config.JsonConfig import JsonConfig
 
 import logging
 import datetime
-import xlrd
 import glob
-import pprint
 import os
 import sys
 import re
 import json
+
 
 class Entries:
 
@@ -34,7 +32,7 @@ class Entries:
         self.verbosity = "none"
         self.errorMsg = ""
         self.debugOutput = ""
-
+        self.json_config = JsonConfig()
 
         logging.basicConfig(filename='logfile.log', filemode='w', level=logging.DEBUG)
 
@@ -46,7 +44,6 @@ class Entries:
         labels = {}
 
         for item in self.currentYear:
-
             labels[item.label] = None
 
         key_list = labels.keys()
@@ -59,7 +56,6 @@ class Entries:
         data = []
         for item in self.currentYear:
             if item.year == year and item.month == month:
-                
                 data.append(item)
         return data
 
@@ -82,7 +78,7 @@ class Entries:
 
         for element in data:
             liquidation_dates.append(element.datelog)
-        liquidation_dates.append(datetime.date(2040, 1, 1)) # dummy date
+        liquidation_dates.append(datetime.date(2040, 1, 1))  # dummy date
         return liquidation_dates
 
     def __iter__(self):
@@ -90,11 +86,12 @@ class Entries:
         self.paymentLiquidationDatesArr = self.return_salary_payment_dates()
         self.index = len(self.paymentLiquidationDatesArr) - 1
 
-        if len(self.paymentLiquidationDatesArr) < 2 :
+        if len(self.paymentLiquidationDatesArr) < 2:
             print("( Entries::__iter__ ) Error! paymentLiquidationDatesArr has less than two elements!")
             sys.exit(1)
 
-        logging.info("__iter__ initialized with paymentLiquidationDatesArr: \n{}\n\n".format(self.paymentLiquidationDatesArr))
+        logging.info(
+            "__iter__ initialized with paymentLiquidationDatesArr: \n{}\n\n".format(self.paymentLiquidationDatesArr))
 
         return self
 
@@ -106,19 +103,22 @@ class Entries:
 
             begining_period_date = self.paymentLiquidationDatesArr[self.index - 1]
             end_period_date = self.paymentLiquidationDatesArr[self.index]
-            print("Reading data from '{}' to '{}' ...".format(begining_period_date, end_period_date - datetime.timedelta(days=1)))
-            logging.info("__next__ '{}' -> '{}'".format (begining_period_date, end_period_date - datetime.timedelta(days=1)))
+            print("Reading data from '{}' to '{}' ...".format(begining_period_date,
+                                                              end_period_date - datetime.timedelta(days=1)))
+            logging.info(
+                "__next__ '{}' -> '{}'".format(begining_period_date, end_period_date - datetime.timedelta(days=1)))
             data = self.return_month_segment_data(begining_period_date, end_period_date)
 
             self.index -= 1
             return data
         else:
             print
-            print("Iteration reached it's end. Last begin value is {}".format(self.paymentLiquidationDatesArr[self.index + 1]))
+            print("Iteration reached it's end. Last begin value is {}".format(
+                self.paymentLiquidationDatesArr[self.index + 1]))
             raise StopIteration
 
     def __del__(self):
-        
+
         if self.debugOutput != "":
             print("(Entries) Debug output: \n\n" + self.debugOutput + "\n")
 
@@ -159,73 +159,95 @@ class Entries:
 
     def extract_data_excel_sheets(self):
         """ Load data from excel statement files """
-        
+
         files = glob.glob(os.path.join(os.environ['OneDrive'], "PythonData", "extrasDeCont", "*xls"))
 
-        with open(os.path.join(os.environ['OneDrive'], "PythonData", "config", "definedLabels.json")) as f:
-            self.config_dict = json.load(f)
+        self.json_config.load_file()
 
         if len(files) == 0:
             raise Exception("No files found in folder \n")
 
-        for filename in files:
+        for filename in sorted(files, key=lambda x: str(re.findall(r'\d{4}\.xls$', x))):
 
-           statement = Statement ()
-           statement.load_statement(filename)
+            statement = Statement()
+            statement.load_statement(filename)
 
-           extract_statement_regex = re.match(r'(\d{2})/(\d{2})/(\d{2})', statement.data['headers']['Data generare extras'])
-           if extract_statement_regex:
-                   (day, month, year) = (extract_statement_regex.group(1), extract_statement_regex.group(2), extract_statement_regex.group(3))
-                   sold_precendent_entry = EntryNew(day=day, month=month, year="20{}".format(year), description="Sold precendent!", value=statement.sold_precendent(), label="_soldPrecendent")
-                   self.new_entry(sold_precendent_entry)
-                   logging.info("(extractDataXLS ) Sold precendent: '{}'".format(sold_precendent_entry))
-           else:
-                   logging.warn("(extractDataXLS ) Date format is not what expected! Date found: '{}'".format(statement.data['headers']['Data generare extras']))
+            if statement.headers.get('Data generare extras'):
+                extract_statement_regex = re.match(r'(\d{2})/(\d{2})/(\d{2})',
+                                                   statement.headers['Data generare extras'])
+            elif statement.headers.get('Perioada'):
+                extract_statement_regex = re.match(r'de la (\d{2})/(\d{2})/(\d{2})',
+                                                   statement.headers['Perioada'])
+            else:
+                raise ValueError('Perioada/Data generare extras expected in statement headers')
 
-           # logging.info ("( extractDataXLS ) For filename '{}', extracted date was '{}.{}.{}'".format(filename, day, month, year ))
+            if extract_statement_regex:
+                (day, month, year) = (extract_statement_regex.group(1), extract_statement_regex.group(2), extract_statement_regex.group(3))
+                sold_precendent_entry = EntryNew(day=day, month=month, year="20{}".format(year),
+                                                 description="Sold precendent!", value=statement.sold_precendent(),
+                                                 label="_soldPrecendent",
+                                                 account=statement.accountName, statement_type=statement.statementType)
+                self.new_entry(sold_precendent_entry)
+                logging.info("(extractDataXLS ) Sold precendent: '{}'".format(sold_precendent_entry))
+            else:
+                logging.warn("(extractDataXLS ) Date format is not what expected! Date found: '{}'".format(
+                    statement.data['headers']['Data generare extras']))
 
-           for operation in statement.data['operations']:
-                   (day, month, year) = operation['Data utilizarii cardului'].split("/")
-                   op_description = operation['Descrierea tranzactiei'].split("|")[0]
-                   if re.match("OPIB", operation['Descrierea tranzactiei']):
-                      op_description = operation['Descrierea tranzactiei'].split("|")[1]
-                   debit_value = operation['Suma debit']
-                   credit_value = operation['Suma credit']
-                   label_str = self.label_me(op_description)
+            # logging.info ("( extractDataXLS ) For filename '{}', extracted date was '{}.{}.{}'".format(filename, day, month, year ))
 
-                   data =("  Data: %s Operatie: %s Eticheta: %s\n " +
-                            "  Valoare debit: %s Valoare credit: %s\n") % (operation['Data utilizarii cardului'], op_description, self.label_me(op_description),
-                                                                         debit_value, credit_value)
-                   if self.verbosity == "high":
-                       print(data)
+            for operation in statement.data['operations']:
+                (day, month, year) = operation['Data utilizarii cardului'].split("/")
+                op_description = operation['Descrierea tranzactiei'].split("|")[0]
+                if re.match("OPIB", operation['Descrierea tranzactiei']):
+                    op_description = operation['Descrierea tranzactiei'].split("|")[1]
+                debit_value = operation['Suma debit']
+                credit_value = operation['Suma credit']
+                label_str = self.label_me(op_description)
 
-                   #self, period="undef", month=-1, year=-1, description.lower()="undef", value=-1, label="undef"
-                   if "Trz IB conturi proprii" in op_description:
-                       print("(Does not work!) Skipping 'Trz IB conturi proprii' entry!")
+                data = ("  Data: %s Operatie: %s Eticheta: %s\n " +
+                        "  Valoare debit: %s Valoare credit: %s\n") % (
+                       operation['Data utilizarii cardului'], op_description, self.label_me(op_description),
+                       debit_value, credit_value)
+                if self.verbosity == "high":
+                    print(data)
 
-                   if debit_value:
-                       self.new_entry(EntryNew(day=day, month=month, year=year, description=op_description, value=-debit_value, label=label_str))
-                   elif credit_value:
-                       #print("credit: %s : %s \n" %(op_description, credit_value ))
-                       
-                       if re.search("|".join(self.config_dict['salaryFirmName']), operation['Nume/Denumire ordonator/beneficiar'], re.IGNORECASE):
-                           if 1 <= int(day) <= 15:
-                                self.new_entry(EntryNew(day=day, month=month, year=year, description=op_description, value=credit_value, label="_salary"))
-                           else:
-                                self.new_entry(EntryNew(day=day, month=month, year=year, period='advance', description=op_description, value=credit_value, label="_salary"))
-                       else:
-                           whoTransfered = "_transferredInto"
-                           if re.search("dumitrescu mihail", op_description.lower()):
-                               whoTransfered = "_transferredTata"
-                           self.new_entry(EntryNew(day=day, month=month, year=year, description=op_description, value=credit_value, label=whoTransfered))
-                   else:
-                       self.errorMsg += "Warn: No debit or credit values! \n\t* Row is: currRow\n\n"
-        print( f"\nDone loading statement data ... Found {len(self.currentYear)} entries!\n\n")
+                # self, period="undef", month=-1, year=-1, description.lower()="undef", value=-1, label="undef"
+                if "Trz IB conturi proprii" in op_description:
+                    print("(Does not work!) Skipping 'Trz IB conturi proprii' entry!")
+
+                if debit_value:
+                    self.new_entry(
+                        EntryNew(day=day, month=month, year=year, description=op_description, value=-debit_value,
+                                 label=label_str, account=statement.accountName, statement_type=statement.statementType))
+                elif credit_value:
+                    # print("credit: %s : %s \n" %(op_description, credit_value ))
+
+                    if re.search(self.json_config.salaryIdentifier, operation['Nume/Denumire ordonator/beneficiar'],
+                                 re.IGNORECASE):
+                        if 1 <= int(day) <= 15:
+                            self.new_entry(EntryNew(day=day, month=month, year=year, description=op_description,
+                                                    value=credit_value, label="_salary",
+                                                    account=statement.accountName, statement_type=statement.statementType))
+                        else:
+                            self.new_entry(
+                                EntryNew(day=day, month=month, year=year, period='advance', description=op_description,
+                                         value=credit_value, label="_salary",
+                                         account=statement.accountName, statement_type=statement.statementType))
+                    else:
+                        whoTransfered = "_transferredInto"
+                        if re.search("dumitrescu mihail", op_description.lower()):
+                            whoTransfered = "_transferredTata"
+                        self.new_entry(
+                            EntryNew(day=day, month=month, year=year, description=op_description, value=credit_value,
+                                     label=whoTransfered, account=statement.accountName, statement_type=statement.statementType))
+                else:
+                    self.errorMsg += "Warn: No debit or credit values! \n\t* Row is: currRow\n\n"
+        print(f"\nDone loading statement data ... Found {len(self.currentYear)} entries!\n\n")
 
     def label_me(self, description):
         """ Selects the correct label from json config file """
-        
-        master_labels = self.config_dict['labelDict']
+
+        master_labels = self.json_config.labels
 
         # {    "leisure" :  {
         #           "film": [ "cinema", "avatar media project" ] }
@@ -233,33 +255,32 @@ class Entries:
 
         for masterLabel in master_labels:
             for childLabel in master_labels[masterLabel]:
-                if re.search (r"|".join(master_labels[masterLabel][childLabel]), description.lower()):
-                    return "%s;%s" % (masterLabel, childLabel)
-
-        return "spent;other"
+                if re.search(r"|".join(master_labels[masterLabel][childLabel]), description.lower()):
+                    return f"{masterLabel}.{childLabel}"
+        return "spent.other"
 
     def write_html_report(self):
         """ Writes html report from entries """
 
         html_output = HTML()
         table = html_output.table()
-        for year in sorted (self.htmlFrame, reverse=True):
+        for year in sorted(self.htmlFrame, reverse=True):
             print("%s" % (year))
             tr = table.tr
-            tr.td (str(year))
+            tr.td(str(year))
             for month in sorted(self.htmlFrame[year], reverse=True):
 
                 tr = table.tr
-                tr.td (str(month))
+                tr.td(str(month))
                 tr_per = table.tr
 
                 dict_liq = self.htmlFrame[year][month]['liquidation']
-                dict_adv = { 'labelSummary' : [] }
+                dict_adv = {'labelSummary': []}
                 if 0:
                     # will not be used anymore
                     dict_adv = self.htmlFrame[year][month]['advance']
 
-                for entryLiq, entryAdv in zip(dict_liq['labelSummary'], dict_adv['labelSummary']): #
+                for entryLiq, entryAdv in zip(dict_liq['labelSummary'], dict_adv['labelSummary']):  #
                     tr_nr = table.tr
                     for key in entryLiq:
                         tr_nr.td(str(key))
@@ -269,11 +290,11 @@ class Entries:
                         tr_nr.td(str(key))
                         tr_nr.td(str(entryAdv[key]))
 
-        with open ("report.html", "w") as f:
-            f.write(str (html_output))
+        with open("report.html", "w") as f:
+            f.write(str(html_output))
 
     def write_csv_data(self):
         """ Writes CSV report """
-        
-        with open ("report.csv", "w") as f:
-            f.write(self.csvValues )
+
+        with open("report.csv", "w") as f:
+            f.write(self.csvValues)

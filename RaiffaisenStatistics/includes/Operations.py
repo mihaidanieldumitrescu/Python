@@ -102,16 +102,13 @@ class Operations:
             logging.info("CHANGED DATE TO: {}-{}".format(curr_year, curr_month))
             print_entries = PrintEntries()
             print_entries.subHeader = [monthly_report[0].datelog, monthly_report[-1].datelog]
-            month_statistics = ""
-            tmp_statistics = ""
-            liquidation_statistics = []
-            advance_statistics = []
+
             sum_of_all_labels = 0
             sum_of_all_labels_by_label = {}
 
             # first initialisation
             for label in key_labels:
-                key = label.split(';')[0]
+                key = label.split('.')[0]
                 if not re.match ("_", key):
                     sum_of_all_labels_by_label[key] = 0
 
@@ -119,9 +116,6 @@ class Operations:
 
             labels_monthly_values_dict = {}
             curr_period = ''
-            other_operations = curr_period + " entries: \n\n"
-            label_summary = []
-            entry_data = []
 
             for currLabel in key_labels:
                 labels_monthly_values_dict[currLabel] = 0
@@ -136,15 +130,15 @@ class Operations:
                         # print("<...> ;{};{};{}-{}-{};{};;".format(currEntry.label.replace(";","."),
                         # currEntry.description, currEntry.year, currEntry.month, currEntry.day, currEntry.value ))
                         logging.info("ENTRY: {}-{} | Record {}-{}-{} | {} | {} | {}".format(curr_year, curr_month, currEntry.year, currEntry.month, currEntry.day,
-                                                                                                currEntry.label.ljust (15), currEntry.description.ljust (35), currEntry.value ) )
+                                                                                                currEntry.label.ljust(15), currEntry.description.ljust(35), currEntry.value))
                         print_entries.monthEntryData.append(( "{}-{}-{}".format(currEntry.year, currEntry.month, currEntry.day),
-                                             currEntry.label, currEntry.description, currEntry.value ) )
+                                             currEntry.label, currEntry.description, currEntry.value))
                         # get values for each lable
                         labels_monthly_values_dict[currLabel] += currEntry.value
 
                         if currEntry.label == "spent;other":
 
-                            print_entries.rightOtherODescription.append([ currEntry.description, currEntry.value ])
+                            print_entries.rightOtherODescription.append([currEntry.description, currEntry.value])
             last_entry_date = []
             for item in monthly_report:
                 last_entry_date.append(item.day )
@@ -177,7 +171,7 @@ class Operations:
                 # { 'spent;food' : 300 }
                 for label in sorted(labels_monthly_values_dict):
 
-                    curr_label_category = label if re.match("_", label) else label.split(";")[0]
+                    curr_label_category = label if re.match("_", label) else label.split(".")[0]
                     switch_label = ''
 
                     if last_label != curr_label_category and last_label != "":
@@ -217,7 +211,7 @@ class Operations:
                     else:
                         print_entries.rightListLabels.append([label, 0])
 
-                    last_label = label if re.match("_", label) else label.split(";")[0]
+                    last_label = label if re.match("_", label) else label.split(".")[0]
 
                 # for the last label (no more labels to compare)
 
@@ -243,9 +237,7 @@ class Operations:
                 print(pprint.pformat(self.rightOtherODescription))
                 print("\n")
 
-            print("SQL file contents\n\n")
-            print(str(self.sql_file))
-            print()
+
 
             if sum_of_all_labels != 0:
 
@@ -253,5 +245,6 @@ class Operations:
                     pass
                     # self.csvValues += "{};{};{};{}\n".format(curr_year,curr_month,label, sum_of_all_labels_by_label[label] )
 
+        self.sql_file.export_contents()
         generate_report_html.process_data()
         generate_report_html.write_html_report()

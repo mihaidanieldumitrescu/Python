@@ -5,7 +5,7 @@ import datetime
 
 
 class EntryNew:
-    def __init__(self, period='liquidation', year=-1, month=-1, day=-1, description="default", value=-1, label="default"):
+    def __init__(self, period='liquidation', year=-1, month=-1, day=-1, description="default", value=-1, label="default", account="Unknown", statement_type="Unknown"):
         self.period = period
         self.day = day
         self.month = month
@@ -14,6 +14,8 @@ class EntryNew:
         self.description = description 
         self.value = value
         self.label = label
+        self.account = account
+        self.statementType = statement_type
 
         self.validate_entries(period, month, year, day, description, value, label)
 

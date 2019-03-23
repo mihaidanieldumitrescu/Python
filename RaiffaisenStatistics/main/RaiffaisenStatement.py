@@ -13,6 +13,8 @@ class Statement(object):
 		self.json_config = JsonConfig()
 		self.statementType = None
 		self.accountName = None
+		self.headers = {}
+		self.rulaj = {}
 		self.data = {
 								"headers": {
 												"Data generare extras": None,
@@ -55,7 +57,7 @@ class Statement(object):
 
 	def load_statement(self, filename):
 		full_path_to_file = os.path.join(os.environ['OneDrive'], "PythonData", "extrasDeCont", filename)
-		print("Statement found: '{}'".format(full_path_to_file))
+		print(f"{os.path.basename(filename)}")
 		book = xlrd.open_workbook(full_path_to_file)
 		sh = book.sheet_by_index(0)
 		overdraft_flag = 0
@@ -68,37 +70,36 @@ class Statement(object):
 				# Data generare extras: -> Monthly statement
 				# Perioada: -> At demand statement
 				if curr_row[0].value == "Perioada:":
-					self.statementType = 'On demand statement'
-					self.data['headers']['Perioada'] = curr_row[1].value
-					self.data['headers']['Data generare extras'] = curr_row[1].value
+					self.statementType = 'OnDemand'
+					self.headers['Perioada'] = curr_row[1].value
 				elif curr_row[0].value == "Data generare extras:":
-					self.statementType = 'Monthly statement'
-					self.data['headers']['Data generare extras'] = curr_row[1].value
+					self.statementType = 'Monthly'
+					self.headers['Data generare extras'] = curr_row[1].value
 			elif rx == 1:
-				self.data['headers']['Numar extras'] = curr_row[1].value
+				self.headers['Numar extras'] = curr_row[1].value
 			elif rx == 5:
-				self.data['headers']['Nume client'] = curr_row[1].value
+				self.headers['Nume client'] = curr_row[1].value
 			elif rx == 6:
-				self.data['headers']['Adresa client'] = curr_row[1].value
+				self.headers['Adresa client'] = curr_row[1].value
 			elif rx == 11:
-				self.data['headers']['Cod IBAN'] = curr_row[1].value
-				acc_name =  self.json_config.return_account_name(curr_row[1].value)
+				self.headers['Cod IBAN'] = curr_row[1].value
+				acc_name = self.json_config.return_account_name(curr_row[1].value)
 				if acc_name:
 					self.accountName = acc_name
 				else:
 					self.accountName = "Unknown"
 			elif rx == 14:
-				self.data['rulaj']['Sold initial'] = curr_row[0].value
-				self.data['rulaj']['Rulaj debitor'] = curr_row[1].value
-				self.data['rulaj']['Rulaj creditor'] = curr_row[2].value
-				self.data['rulaj']['Sold final'] = curr_row[3].value
+				self.rulaj['Sold initial'] = curr_row[0].value
+				self.rulaj['Rulaj debitor'] = curr_row[1].value
+				self.rulaj['Rulaj creditor'] = curr_row[2].value
+				self.rulaj['Sold final'] = curr_row[3].value
 			elif rx == 16:
 				if re.search("Valoare plafon descoperit de cont", curr_row[0].value):
 					overdraft_flag = 1
 
 			elif rx == 17:
 				if overdraft_flag:
-					self.data['rulaj']['Valoare plafon descoperit de cont'] = curr_row[0].value
+					self.rulaj['Valoare plafon descoperit de cont'] = curr_row[0].value
 			elif rx >= 18:
 
 				if len(curr_row[1].value.split('/') ) == 3:
@@ -112,7 +113,6 @@ class Statement(object):
 						cardCF = "Cont secundar|"
 					elif re.search(r'9074$', curr_row[10].value) and re.search("dumitrescu", curr_row[8].value, re.IGNORECASE):
 						cardCF = "Economiii|"
-					data_utilizarii = ""
 
 					# ENEL ENERGIE MUNTENIA BUCURESTI |Card nr. XXXX XXXX XXXX XXXX |Data utilizarii cardului 2/03/2017
 					# UBER   *TRIP                    |Card nr. XXXX XXXX XXXX XXXX |Valoare in EUR 4.31 |
@@ -137,7 +137,9 @@ class Statement(object):
 									"Descrierea tranzactiei": cardCF + curr_row[11].value
 
 								})
-		print(f"\t ->{self.accountName}, {self.statementType}\n")
+		statement_date = self.headers.get('Perioada') if self.headers.get('Perioada') else self.headers.get('Data generare extras')
+		print(f"\t ->{self.accountName}, {statement_date}, {self.statementType}\n")
+
 	def sold_precendent(self):
 		sold = float(self.data['rulaj']['Sold initial'])
 		if 'Valoare plafon descoperit de cont' in self.data['rulaj']:

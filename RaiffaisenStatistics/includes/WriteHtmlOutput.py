@@ -184,22 +184,21 @@ class WriteHtmlOutput:
 class EntriesCollection:
     ''' Google table generation from collected entries data '''
 
-    def __init__(self ):
+    def __init__(self):
         self.entries = []
         self.htmlData = []
         self.navigationHeaders = []
         self.chartData = []
         self.chartDataBills = []
         self.chartDataTotals = []
-        self.rentValue = self.load_rent_value ()
+        self.rentValue = self.load_rent_value()
 
     def load_rent_value (self):
-        tmp = ""
         with open(os.path.join(os.environ['OneDrive'], "PythonData", "config", "definedLabels.json")) as f:
             tmp = json.load(f)
-        return tmp['rentValue']
+        return tmp['rent']
 
-    def add_chart_row(self, date, labelsArr):
+    def add_chart_row(self, date, labels_arr):
         divider_line_value = 6000
 
         # labelsArr: [ [ labelName, value ], [ labelName, value ], [ labelName, value ], [ labelName, value ] ]
@@ -224,10 +223,9 @@ class EntriesCollection:
             for pair in elem.rightListLabels:
                 if '_soldPrecendent' == pair[0]:
                     sold_precendent = (int(pair[1]))
-                    print("Found sold_precendent '{}'".format(sold_precendent))
         for seekedLabel in def_labels:
             # ['_rulaj', -100]
-            for pair in labelsArr:
+            for pair in labels_arr:
                 if seekedLabel == pair[0]:
                     values_arr.append ("{: <8}".format(int(pair[1] * -1)))
                     values_total += int(pair[1] * -1)
@@ -235,7 +233,7 @@ class EntriesCollection:
 
         income_value = 0
 
-        for pair in labelsArr:
+        for pair in labels_arr:
             if '_rulaj' == pair[0]:
                 income_value = "{: <8}".format(int(pair[1]))
 
@@ -250,10 +248,10 @@ class EntriesCollection:
 
             self.chartDataBills.append("\t\t\t\t[ {},  {: <6}, {: <6},  {: <6},  {: <6} ] ".format(month_conversion, divider_line_value, self.rentValue, values_arr[2], values_arr[4]))
             #  [  new Date("2018-09-05" ),  6000  , 1855  , 6001     ] , 2
-            self.chartDataTotals.append("\t\t\t\t[ {},  {: <6}, {: <6}, {: <6}, {: <6} ] ".format(month_conversion, divider_line_value, values_total, income_value , sold_precendent))
+            self.chartDataTotals.append("\t\t\t\t[ {},  {: <6}, {: <6}, {: <6}, {: <6} ] ".format(month_conversion, divider_line_value, values_total, income_value, sold_precendent))
 
         else:
-            logging.warn("EntriesCollection::addChartRow: Error! Expected '{}' labels! \n\n Value of labelsArr is: {}".format(len(def_labels), labelsArr))
+            logging.warn("EntriesCollection::addChartRow: Error! Expected '{}' labels! \n\n Value of labelsArr is: {}".format(len(def_labels), labels_arr))
 
     def add_month_entry(self, month):
         self.navigationHeaders.append(month.header)
