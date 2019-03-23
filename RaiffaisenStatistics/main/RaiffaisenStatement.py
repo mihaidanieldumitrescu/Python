@@ -4,11 +4,15 @@ import sys
 import re
 import pprint
 
+from json_config.JsonConfig import JsonConfig
+
 
 class Statement(object):
 
 	def __init__(self):
-		self.pp = pprint.PrettyPrinter(indent=4)
+		self.json_config = JsonConfig()
+		self.statementType = None
+		self.accountName = None
 		self.data = {
 								"headers": {
 												"Data generare extras": None,
@@ -33,45 +37,63 @@ class Statement(object):
 		}
 
 		self.example = {
-													"Data inregistrare": "" ,
-													"Data tranzactiei": "" ,
-													"Suma debit": "" ,
-													"Suma credit": "" ,
-													"Nr. OP": "" ,
-													"Cod fiscal beneficiar": "" ,
-													"Ordonator final": "" ,
-													"Beneficiar final": "" ,
-													"Nume/Denumire ordonator/beneficiar": "" ,
-													"Denumire Banca ordonator/ beneficiar": "" ,
-													"Nr. cont in/din care se efectueaza tranzactiile": "" ,
+													"Data inregistrare": "",
+													"Data tranzactiei": "",
+													"Suma debit": "",
+													"Suma credit": "",
+													"Nr. OP": "",
+													"Cod fiscal beneficiar": "",
+													"Ordonator final": "",
+													"Beneficiar final": "",
+													"Nume/Denumire ordonator/beneficiar": "",
+													"Denumire Banca ordonator/ beneficiar": "",
+													"Nr. cont in/din care se efectueaza tranzactiile": "",
+													"Nr. cont in/din care se efectueaza tranzactiile": "",
 													"Descrierea tranzactiei": ""
 
 						}
 
 	def load_statement(self, filename):
-		full_path_to_file = os.path.join(os.environ['OneDrive'], "PythonData","extrasDeCont", filename)
+		full_path_to_file = os.path.join(os.environ['OneDrive'], "PythonData", "extrasDeCont", filename)
 		print("Statement found: '{}'".format(full_path_to_file))
 		book = xlrd.open_workbook(full_path_to_file)
 		sh = book.sheet_by_index(0)
 		overdraft_flag = 0
 
+		self.json_config.load_file()
+
 		for rx in range(sh.nrows):
 			curr_row = sh.row(rx)
 			if rx == 0:
-				self.data['headers']['Data generare extras'] = curr_row[1].value
+				# Data generare extras: -> Monthly statement
+				# Perioada: -> At demand statement
+				if curr_row[0].value == "Perioada:":
+					self.statementType = 'On demand statement'
+					self.data['headers']['Perioada'] = curr_row[1].value
+					self.data['headers']['Data generare extras'] = curr_row[1].value
+				elif curr_row[0].value == "Data generare extras:":
+					self.statementType = 'Monthly statement'
+					self.data['headers']['Data generare extras'] = curr_row[1].value
 			elif rx == 1:
 				self.data['headers']['Numar extras'] = curr_row[1].value
 			elif rx == 5:
 				self.data['headers']['Nume client'] = curr_row[1].value
 			elif rx == 6:
 				self.data['headers']['Adresa client'] = curr_row[1].value
+			elif rx == 11:
+				self.data['headers']['Cod IBAN'] = curr_row[1].value
+				acc_name =  self.json_config.return_account_name(curr_row[1].value)
+				if acc_name:
+					self.accountName = acc_name
+				else:
+					self.accountName = "Unknown"
 			elif rx == 14:
-				self.data['rulaj']['Sold initial'] =   curr_row[0].value
-				self.data['rulaj']['Rulaj debitor'] =  curr_row[1].value
-				self.data['rulaj']['Rulaj creditor'] =   curr_row[2].value
-				self.data['rulaj']['Sold final'] =  curr_row[3].value
+				self.data['rulaj']['Sold initial'] = curr_row[0].value
+				self.data['rulaj']['Rulaj debitor'] = curr_row[1].value
+				self.data['rulaj']['Rulaj creditor'] = curr_row[2].value
+				self.data['rulaj']['Sold final'] = curr_row[3].value
 			elif rx == 16:
-				if re.search("Valoare plafon descoperit de cont", curr_row[0].value) :
+				if re.search("Valoare plafon descoperit de cont", curr_row[0].value):
 					overdraft_flag = 1
 
 			elif rx == 17:
@@ -82,13 +104,13 @@ class Statement(object):
 				if len(curr_row[1].value.split('/') ) == 3:
 					cardCF = ""
 
-					if re.search (r'5244$', curr_row[10].value) and re.search ("dumitrescu", curr_row[8].value, re.IGNORECASE):
+					if re.search(r'5244$', curr_row[10].value) and re.search("dumitrescu", curr_row[8].value, re.IGNORECASE):
 						cardCF = "Rata Card Cumparaturi|"
-					elif re.search (r'5113$', curr_row[10].value) and re.search ("dumitrescu", curr_row[8].value, re.IGNORECASE):
+					elif re.search(r'5113$', curr_row[10].value) and re.search("dumitrescu", curr_row[8].value, re.IGNORECASE):
 						cardCF = "Cont principal|"
-					elif re.search (r'6184$', curr_row[10].value) and re.search ("dumitrescu", curr_row[8].value, re.IGNORECASE):
+					elif re.search(r'6184$', curr_row[10].value) and re.search("dumitrescu", curr_row[8].value, re.IGNORECASE):
 						cardCF = "Cont secundar|"
-					elif re.search (r'9074$', curr_row[10].value) and re.search ("dumitrescu", curr_row[8].value, re.IGNORECASE):
+					elif re.search(r'9074$', curr_row[10].value) and re.search("dumitrescu", curr_row[8].value, re.IGNORECASE):
 						cardCF = "Economiii|"
 					data_utilizarii = ""
 
@@ -106,28 +128,28 @@ class Statement(object):
 
 					self.data['operations'].append({
 
-									"Data inregistrare": curr_row[0].value ,
-									"Data tranzactiei": curr_row[1].value ,
+									"Data inregistrare": curr_row[0].value,
+									"Data tranzactiei": curr_row[1].value,
 									"Data utilizarii cardului": data_utilizarii,
-									"Suma debit": curr_row[2].value  ,
-									"Suma credit": curr_row[3].value ,
+									"Suma debit": curr_row[2].value,
+									"Suma credit": curr_row[3].value,
 									"Nume/Denumire ordonator/beneficiar": curr_row[8].value,
 									"Descrierea tranzactiei": cardCF + curr_row[11].value
 
 								})
-
+		print(f"\t ->{self.accountName}, {self.statementType}\n")
 	def sold_precendent(self):
-		sold = float (self.data['rulaj']['Sold initial'])
+		sold = float(self.data['rulaj']['Sold initial'])
 		if 'Valoare plafon descoperit de cont' in self.data['rulaj']:
 			sold += float(self.data['rulaj']['Valoare plafon descoperit de cont'])
 
 		for operatie in self.data['operations']:
-			if re.search("luxoft|harman", operatie['Nume/Denumire ordonator/beneficiar'], re.IGNORECASE ):
+			if re.search(self.json_config.salaryIdentifier, operatie['Nume/Denumire ordonator/beneficiar'], re.IGNORECASE):
 				break
 			if operatie['Suma debit'] != '':
-				sold -= float (operatie['Suma debit'])
+				sold -= float(operatie['Suma debit'])
 			if operatie['Suma credit'] != '':
-				sold += float (operatie['Suma credit'])
+				sold += float(operatie['Suma credit'])
 		return sold
 
 
@@ -136,6 +158,6 @@ if __name__ == "__main__":
 	if len(sys.argv) > 1:
 		testObj.load_statement(sys.argv[1])
 
-		print(testObj.pp.pprint(testObj.data))
+		print(pprint.pformat(testObj.data))
 	else:
 		print(r"Please specify a excel file found in 'Onedrive\PythonData\extrasDeCont' ")
