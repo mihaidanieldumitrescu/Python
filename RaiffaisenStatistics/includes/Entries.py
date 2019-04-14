@@ -241,7 +241,7 @@ class Entries:
                             EntryNew(day=day, month=month, year=year, description=op_description, value=credit_value,
                                      label=whoTransfered, account=statement.accountName, statement_type=statement.statementType))
                 else:
-                    self.errorMsg += "Warn: No debit or credit values! \n\t* Row is: currRow\n\n"
+                    self.errorMsg += f"Warn: No debit or credit values! \n\t* Row is: {operation}\n\n"
         print(f"\nDone loading statement data ... Found {len(self.currentYear)} entries!\n\n")
 
     def label_me(self, description):

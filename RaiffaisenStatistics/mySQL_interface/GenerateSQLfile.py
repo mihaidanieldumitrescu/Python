@@ -29,10 +29,11 @@ class GenerateSQLfile:
         with connection.cursor() as cursor:
             for entry in self.entries:
                 # Create a new record
-                sql = "INSERT INTO `Spendings_ExtrasDeCont` (`SpreadsheetType`, `Account`, " \
+                sql = "INSERT INTO `ExtrasDeCont` (`SpreadsheetType`, `Account`, " \
                       "`Label`, `Name`, `Date`, `Value`) VALUES (%s, %s, %s, %s, %s, %s)"
                 cursor.execute(sql, (entry.statementType, entry.account, entry.label, entry.description, entry.datelog.isoformat(), entry.value))
-        connection.commit()
+        print("commit is off!")
+        # connection.commit()
 
 
 

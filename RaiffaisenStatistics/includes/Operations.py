@@ -109,7 +109,7 @@ class Operations:
             # first initialisation
             for label in key_labels:
                 key = label.split('.')[0]
-                if not re.match ("_", key):
+                if not re.match("_", key):
                     sum_of_all_labels_by_label[key] = 0
 
             # for advance and liquidation
