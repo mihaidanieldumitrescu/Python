@@ -158,8 +158,7 @@ class Olx(object):
                     continue
 
                 if len(priceArr):
-                    print(priceArr[0].strong.string.replace(" ", "")[:-1])
-                    product_price = int(priceArr[0].strong.string.replace(" ", "")[:-1])
+                    product_price = int(float(priceArr[0].strong.string.replace(" ", "")[:-1]))
 
                 else:
                     product_price = -1
@@ -220,22 +219,28 @@ class OlxCars(Olx):
         for carBuilder in self.filterWordsCarsModels[0]:
             for carModel in self.filterWordsCarsModels[0][carBuilder]:
                 print(f"Looking for {carModel} ...")
-                self.statistics[carModel] = {"occurences": 0, "prices": []}
                 for productDesc in self.products:
                     if carModel in productDesc[0].lower():
                         sorted_list.append([self.filter_desc(productDesc[0]), productDesc[1]])
+                        if carModel not in self.statistics:
+                            self.statistics[carModel] = {"occurences": 0, "prices": [], "description": []}
                         self.statistics[carModel]['prices'].append(productDesc[1])
-                        self.statistics[carModel]['prices'] = sorted(self.statistics[carModel]['prices'])
+                        self.statistics[carModel]['description'].append(productDesc[0])
+
                         self.statistics[carModel]['occurences'] += 1
                     else:
                         other_cars.append([self.filter_desc(productDesc[0]), productDesc[1]])
-                        self.statistics['other_cars'].update({self.filter_desc(productDesc[0]): productDesc[1]})
-                        self.statistics['other_cars']['occurences'] += 1
-                tmp_sum = 0
-                for price in self.statistics[carModel]['prices']:
-                    tmp_sum += int(price)
-                if len(self.statistics[carModel]['prices']):
-                    self.statistics[carModel]['average'] = tmp_sum / len(self.statistics[carModel]['prices'])
+                        if 'other_cars' not in self.statistics:
+                            self.statistics['other_cars'] = {}
+                            self.statistics['other_cars']['occurences'] = 0
+                        else:
+                            self.statistics['other_cars'].update({self.filter_desc(productDesc[0]): productDesc[1]})
+                            self.statistics['other_cars']['occurences'] += 1
+
+
+                if carModel in self.statistics:
+                    self.statistics[carModel]['average'] = sum(self.statistics[carModel]['prices']) / len(self.statistics[carModel]['prices'])
+
         sorted_list.append(other_cars)
 
     def read_product_details(self):
