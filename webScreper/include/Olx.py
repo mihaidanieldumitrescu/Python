@@ -17,7 +17,7 @@ class OlxProduct:
         self.images = []
         self.pageCounter = 0
 
-        print(f"(OlxProduct contructor) Link is {self.link}\n")
+        print(f"(OlxProduct contructor) Link is {self.link}")
 
     def __repr__(self):
         details_pretty = {}
@@ -55,8 +55,12 @@ class OlxProduct:
                 self.price = soup.find("div", {"class": "pricelabel"}).strong.text
             else:
                 self.price = "n/a"
-            # self.description
-            self.description = soup.find("div", {"id": "textContent"}).text.strip()
+
+            try:
+                self.description = soup.find("div", {"id": "textContent"}).text.strip()
+            except AttributeError as e:
+                self.description = "No description available for this page! Page is deactivated"
+                print(f"{e} -> Page is deactivated!")
 
             # self.images
             for div in soup.findAll("div", {"class": "photo-glow"}):
@@ -86,7 +90,7 @@ class OlxProduct:
             title = u"<h3><a href='" + self.link + u"' >" + self.price + u" - " + self.title + u"</a></h3>\n\n"
 
             # paragraph e singurul care foloseste metoda text in loc de string "Adus\xc4\x83 din Germania" -> "Adus\u0103 din Germania"
-            description = u"<p>" + self.description + u"</p>\n"
+            description = u"<p><pre style='white-space: pre-wrap; word-wrap: break-word;'>" + self.description + u"</pre></p>\n"
             details = u"<p>An de fabricatie: {} - Rulaj: {} - Capacitate: {}".format(self.details.get('An de fabricatie', "n/a"),
                                                                                      self.details.get('Rulaj', "n/a"),
                                                                                      self.details.get('Capacitate motor', "n/a"))
@@ -162,6 +166,8 @@ class Olx(object):
 
                 else:
                     product_price = -1
+
+
                 self.products.append([product_title, product_price, product_link])
 
             last_page = soup.find_all("div", {"class": "pager rel clr"})
@@ -202,12 +208,12 @@ class OlxCars(Olx):
 
     def __init__(self):
         searchlink = "https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/?search%5Bfilter_float_price%3Afrom%5D=600&search%5Bfilter_float_price%3Ato%5D=1400"
-        Olx.__init__(self, searchlink, 1)
-        self.pp = pprint.PrettyPrinter(indent=4)
+        Olx.__init__(self, searchlink, 10)
         self.statistics = {"otherCars": {"prices": [], "occurences": 0}}
         self.productDetailsArr = []
         self.load_products()
         self.filterWordsCarsModels = json.load(open(os.path.join(os.environ['OneDrive'], "PythonData", "config", "olx_cars.json")))
+        self.allModels = []
         self.sort_by_model()
         self.read_product_details()
         self.write_results()
@@ -218,7 +224,8 @@ class OlxCars(Olx):
         other_cars = []
         for carBuilder in self.filterWordsCarsModels[0]:
             for carModel in self.filterWordsCarsModels[0][carBuilder]:
-                print(f"Looking for {carModel} ...")
+                self.allModels.append(carModel)
+
                 for productDesc in self.products:
                     if carModel in productDesc[0].lower():
                         sorted_list.append([self.filter_desc(productDesc[0]), productDesc[1]])
@@ -241,11 +248,23 @@ class OlxCars(Olx):
                 if carModel in self.statistics:
                     self.statistics[carModel]['average'] = sum(self.statistics[carModel]['prices']) / len(self.statistics[carModel]['prices'])
 
+
+        # THIS IS NOT GLOBAL
         sorted_list.append(other_cars)
 
     def read_product_details(self):
+
+        print(f"selected models: {pprint.pformat(self.allModels)}\n")
+
+
         for productArr in self.products:
-            if productArr[2]:
+
+            title_tokens = productArr[0].lower().split()
+            matches_dict = {token: token in self.allModels for token in title_tokens}
+
+            matches_defined_models = any(matches_dict.values())
+
+            if productArr[2] and matches_defined_models:
                 obj = OlxProduct(productArr[2])
                 obj.load_page()
                 self.productDetailsArr.append(obj)
