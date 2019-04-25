@@ -5,7 +5,29 @@ import requests
 import json
 import os
 import re
+import locale
 
+locale.setlocale(locale.LC_ALL, '')
+
+link_index = 1
+bootstrap_head_header = """\
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <title>Olx-Cars Report</title>
+  </head>
+"""
+
+bootstap_footer = '''\
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+'''
 
 class OlxProduct:
     def __init__(self, link="https://www.olx.ro/oferta/masina-renault-megane-IDbEIBo.html"):
@@ -85,25 +107,58 @@ class OlxProduct:
             print("(OlxProduct) Error: Not an olx link!\n")
 
     def to_htmldiv(self):
+        global link_index
+
         if re.search(r'https?://www.olx.ro/oferta', self.link):
-            div = [u"<div class='olx-product'>\n"]
-            title = u"<h3><a href='" + self.link + u"' >" + self.price + u" - " + self.title + u"</a></h3>\n\n"
+            div = [u"<div class='row'>\n"
+                   u"<div class='col col-lg'>"]
+            title = u"<h3>" \
+                    u"<a href='" + self.link + u"' >" + self.price + u" - " + self.title + u"</a>" \
+                                                                                           u"</h3>\n\n"
+            price_to_int = int(self.price.replace("€", "").replace(" ", ""))
+
 
             # paragraph e singurul care foloseste metoda text in loc de string "Adus\xc4\x83 din Germania" -> "Adus\u0103 din Germania"
-            description = u"<p><pre style='white-space: pre-wrap; word-wrap: break-word;'>" + self.description + u"</pre></p>\n"
-            details = u"<p>An de fabricatie: {} - Rulaj: {} - Capacitate: {}".format(self.details.get('An de fabricatie', "n/a"),
+
+            details_button = '''\
+<button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#details''' + f"_{link_index}" +\
+                             '''" aria-expanded="false" aria-controls="details''' + f"_{link_index}" + '''"> Description details
+</button>
+'''
+
+            description = '''\
+<p><div class="collapse" id="details''' + f"_{link_index}" + '''">
+  <div class="card card-body">
+<pre style='white-space: pre-wrap; word-wrap: break-word;'>"''' + self.description + '''</pre>
+  </div>
+</div></p>
+'''
+            in_local_currency = f"<p>Conversie: {locale.currency(price_to_int * 4.75, grouping = True)}"
+            details = u"An de fabricatie: {} - Rulaj: {} - Capacitate: {}".format(self.details.get('An de fabricatie', "n/a"),
                                                                                      self.details.get('Rulaj', "n/a"),
                                                                                      self.details.get('Capacitate motor', "n/a"))
-            images = (u"<div class='image-gallery'>\n" +
-                      u"\n".join([u"<img src ='" + x + "' height='300' ></img>" for x in self.images]) +
+            images = (u"<div class='row'>"
+                      u"\n" +
+                      u"\n".join([u"<div class='col-md-4'>"
+                                  u"  <p><div class='card md-4 box-shadow' style='width: 22rem;'>"
+                                  u"    <img class='card-img-top' src='" + img_link + u"'>"
+                                  u"    </img>"
+                                  u"  </div></p>"
+                                  u"</div>" for img_link in self.images]) +
                       u"</div>")
 
             div.append(title)
+            div.append(in_local_currency)
+
             div.append(details)
+            div.append(details_button)
             div.append(description)
 
             div.append(images)
-            div.append(u"</div>")
+            div.append(u"</div></div><hr>")
+
+            link_index += 1
+
             return u"\n".join(div)
         else:
             return u"<p>-Page empty-\n\n"
@@ -192,6 +247,8 @@ class Olx(object):
             print("Done extracting ...\n\n Found a number of {} pages and a total of {} items ".format(self.pagesIndex, len(self.products)))
         if fail:
             print("Error: Either link is wrong or something changed in page structure!\n\n")
+            with open("fail.html", "w") as f:
+                f.write(soup.text)
 
     def get_next_page(self, lastPage):
         pass
@@ -208,7 +265,7 @@ class OlxCars(Olx):
 
     def __init__(self):
         searchlink = "https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/?search%5Bfilter_float_price%3Afrom%5D=600&search%5Bfilter_float_price%3Ato%5D=1400"
-        Olx.__init__(self, searchlink, 10)
+        Olx.__init__(self, searchlink, 1)
         self.statistics = {"otherCars": {"prices": [], "occurences": 0}}
         self.productDetailsArr = []
         self.load_products()
@@ -256,7 +313,6 @@ class OlxCars(Olx):
 
         print(f"selected models: {pprint.pformat(self.allModels)}\n")
 
-
         for productArr in self.products:
 
             title_tokens = productArr[0].lower().split()
@@ -276,13 +332,15 @@ class OlxCars(Olx):
             f.write(json.dumps(self.statistics, sort_keys=True, indent=4))
         with open("reportCars.html", "w", encoding='utf-8') as f:
             f.write("<html>")
-            f.write("<head>\n\t<meta charset='UTF-8'> \n\t <title>Olx-Cars Report</title>\n</head>\n<body>\n\n")
+            f.write(bootstrap_head_header + "\n<body>\n\n")
+            f.write("<div class='container'>")
             f.write("\n\n".join([x.to_htmldiv() for x in self.productDetailsArr]))
-            f.write("</body></html>")
+            f.write("</div>" + bootstap_footer + "</body></html>")
 
         print("OBS: Where are the Other car category?\n\n")
 
-    def filter_desc(self, description):
+    @staticmethod
+    def filter_desc(description):
         filter_words = ['vind', 'vand', 'cumpar', 'schimb', 'masina', 'cu', 'oferta', 'pret', 'sau']
         final_string = ""
         for word in description.lower().split(' '):
