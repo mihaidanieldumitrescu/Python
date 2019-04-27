@@ -29,12 +29,14 @@ bootstap_footer = '''\
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 '''
 
+
 class OlxProduct:
     def __init__(self, link="https://www.olx.ro/oferta/masina-renault-megane-IDbEIBo.html"):
         self.title = ""
         self.link = link.split("#")[0] if len(link.split("#")) else link
         self.price = 0
         self.details = {}
+        self.location = ""
         self.description = []
         self.images = []
         self.pageCounter = 0
@@ -78,6 +80,11 @@ class OlxProduct:
             else:
                 self.price = "n/a"
 
+            if soup.find('div', {'class': "offer-titlebox__details"}):
+                self.location = soup.find('div', {'class': "offer-titlebox__details"}).a.strong.text
+            else:
+                self.location = "n/a"
+
             try:
                 self.description = soup.find("div", {"id": "textContent"}).text.strip()
             except AttributeError as e:
@@ -115,15 +122,21 @@ class OlxProduct:
             title = u"<h3>" \
                     u"<a href='" + self.link + u"' >" + self.price + u" - " + self.title + u"</a>" \
                                                                                            u"</h3>\n\n"
-            price_to_int = int(self.price.replace("€", "").replace(" ", ""))
-
+            try:
+                substituted_price_string = re.sub(r"€|lei|\s+", "", self.price)
+                price_to_int = int(substituted_price_string)
+            except ValueError as e:
+                print(f"{e}: \n")
+                print(f"\t-> Link: {self.link}")
+                print("\n\n")
+                price_to_int = '-999'
 
             # paragraph e singurul care foloseste metoda text in loc de string "Adus\xc4\x83 din Germania" -> "Adus\u0103 din Germania"
 
             details_button = '''\
-<button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#details''' + f"_{link_index}" +\
+<p><button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#details''' + f"_{link_index}" +\
                              '''" aria-expanded="false" aria-controls="details''' + f"_{link_index}" + '''"> Description details
-</button>
+</button></p>
 '''
 
             description = '''\
@@ -133,10 +146,10 @@ class OlxProduct:
   </div>
 </div></p>
 '''
-            in_local_currency = f"<p>Conversie: {locale.currency(price_to_int * 4.75, grouping = True)}"
-            details = u"An de fabricatie: {} - Rulaj: {} - Capacitate: {}".format(self.details.get('An de fabricatie', "n/a"),
-                                                                                     self.details.get('Rulaj', "n/a"),
-                                                                                     self.details.get('Capacitate motor', "n/a"))
+            in_local_currency = f"<p>Conversie: {locale.currency(price_to_int * 4.75, grouping = True)} - Locatie: {self.location}</p>"
+            details = u"<p>An de fabricatie: {} - Rulaj: {} - Capacitate: {}</p>".format(self.details.get('An de fabricatie', "n/a"),
+                                                                                                       self.details.get('Rulaj', "n/a"),
+                                                                                                       self.details.get('Capacitate motor', "n/a"))
             images = (u"<div class='row'>"
                       u"\n" +
                       u"\n".join([u"<div class='col-md-4'>"
@@ -187,7 +200,7 @@ class Olx(object):
         # url = sortByDesc
         fail = 0
         pages = 0
-        url = "https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/?search%5Bfilter_float_price%3Afrom%5D=2000&search%5Bfilter_float_price%3Ato%5D=7000"
+        url = "https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/?search%5Bfilter_float_price%3Afrom%5D=1000&search%5Bfilter_float_price%3Ato%5D=7000"
         # url = "https://www.olx.ro/oferte/q-asus-transformer/"
         while url != "":
 
@@ -218,12 +231,11 @@ class Olx(object):
 
                 if len(priceArr):
                     product_price = int(float(priceArr[0].strong.string.replace(" ", "")[:-1]))
-
                 else:
                     product_price = -1
 
-
                 self.products.append([product_title, product_price, product_link])
+                self.products = sorted(self.products, key=lambda x: x[1])
 
             last_page = soup.find_all("div", {"class": "pager rel clr"})
 
@@ -265,7 +277,7 @@ class OlxCars(Olx):
 
     def __init__(self):
         searchlink = "https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/?search%5Bfilter_float_price%3Afrom%5D=600&search%5Bfilter_float_price%3Ato%5D=1400"
-        Olx.__init__(self, searchlink, 1)
+        Olx.__init__(self, searchlink, 50)
         self.statistics = {"otherCars": {"prices": [], "occurences": 0}}
         self.productDetailsArr = []
         self.load_products()
@@ -282,9 +294,8 @@ class OlxCars(Olx):
         for carBuilder in self.filterWordsCarsModels[0]:
             for carModel in self.filterWordsCarsModels[0][carBuilder]:
                 self.allModels.append(carModel)
-
                 for productDesc in self.products:
-                    if carModel in productDesc[0].lower():
+                    if carModel.lower() in productDesc[0].lower():
                         sorted_list.append([self.filter_desc(productDesc[0]), productDesc[1]])
                         if carModel not in self.statistics:
                             self.statistics[carModel] = {"occurences": 0, "prices": [], "description": []}
