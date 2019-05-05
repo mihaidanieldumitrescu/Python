@@ -106,13 +106,13 @@ class Statement(object):
 					cardCF = ""
 
 					if re.search(r'5244$', curr_row[10].value) and re.search("dumitrescu", curr_row[8].value, re.IGNORECASE):
-						cardCF = "Rata Card Cumparaturi|"
+						cardCF = "transfer_ramburs_cumparaturi|"
 					elif re.search(r'5113$', curr_row[10].value) and re.search("dumitrescu", curr_row[8].value, re.IGNORECASE):
-						cardCF = "Cont principal|"
+						cardCF = "_transfer_mastercard|"
 					elif re.search(r'6184$', curr_row[10].value) and re.search("dumitrescu", curr_row[8].value, re.IGNORECASE):
-						cardCF = "Cont secundar|"
+						cardCF = "_transfer_visa|"
 					elif re.search(r'9074$', curr_row[10].value) and re.search("dumitrescu", curr_row[8].value, re.IGNORECASE):
-						cardCF = "Economiii|"
+						cardCF = "_transfer_economii|"
 
 					# ENEL ENERGIE MUNTENIA BUCURESTI |Card nr. XXXX XXXX XXXX XXXX |Data utilizarii cardului 2/03/2017
 					# UBER   *TRIP                    |Card nr. XXXX XXXX XXXX XXXX |Valoare in EUR 4.31 |
