@@ -1,6 +1,5 @@
-from main.EntryNew import EntryNew as EntryNew
-
 from html import HTML
+from main.EntryNew import EntryNew as EntryNew
 
 from main.RaiffaisenStatement import Statement
 from json_config.JsonConfig import JsonConfig
@@ -11,27 +10,27 @@ import glob
 import os
 import sys
 import re
-import json
+import pprint
 
 
 class Entries:
 
     def __init__(self, input_file):
         self.config_dict = {}
-        self.currentYear = []
-        self.dictCurrentYear = {}
+        self.current_year_list = []
+        self.current_year_dict = {}
 
-        self.statistics = {}
-        self.manualEntries = []
-        self.csvValues = ""
+        self.statistics_dict = {}
+        self.manual_entries = []
+        self.csv_values = ""
 
-        self.dataVerification = []
+        self.data_verification = []
 
-        self.htmlOutput = HTML()
-        self.htmlFrame = {}
+        self.html_output = HTML()
+        self.html_frame = {}
         self.verbosity = "none"
-        self.errorMsg = ""
-        self.debugOutput = ""
+        self.error_msg = ""
+        self.debug_output = ""
         self.json_config = JsonConfig()
 
         logging.basicConfig(filename='logfile.log', filemode='w', level=logging.DEBUG)
@@ -43,7 +42,7 @@ class Entries:
     def get_labels(self):
         labels = {}
 
-        for item in self.currentYear:
+        for item in self.current_year_list:
             labels[item.label] = None
 
         key_list = labels.keys()
@@ -51,20 +50,30 @@ class Entries:
         return key_list
 
     def return_month_data(self, year, month):
-        """returns data entries from first day of the month to the last"""
+        """ Returns data entries from first day of the month to the last
+
+        :param year:
+        :param month:
+        :return:
+        """
 
         data = []
-        for item in self.currentYear:
+        for item in self.current_year_list:
             if item.year == year and item.month == month:
                 data.append(item)
         return data
 
-    def return_month_segment_data(self, begining_period_date, end_period_date):
-        """this contains data from salary payment to the next salary"""
+    def return_month_segment_data(self, beginning_period_date, end_period_date):
+        """ This contains data from salary payment to the next salary
+
+        :param beginning_period_date:
+        :param end_period_date:
+        :return:
+        """
 
         data = []
-        for item in self.currentYear:
-            if begining_period_date <= item.datelog < end_period_date:
+        for item in self.current_year_list:
+            if beginning_period_date <= item.datelog < end_period_date:
                 data.append(item)
         return data
 
@@ -72,8 +81,9 @@ class Entries:
         data = []
         liquidation_dates = [datetime.date(2000, 1, 1)]  # dummy date
 
-        for item in self.currentYear:
-            if item.label == '_salary' and item.period == 'liquidation':
+        for item in self.current_year_list:
+            if item.label == '_salary' and \
+               item.period == 'liquidation':
                 data.append(item)
 
         for element in data:
@@ -117,25 +127,25 @@ class Entries:
                 self.paymentLiquidationDatesArr[self.index + 1]))
             raise StopIteration
 
-    def __del__(self):
-
-        if self.debugOutput != "":
-            print("(Entries) Debug output: \n\n" + self.debugOutput + "\n")
-
-        if self.errorMsg != "":
-            print("(Entries) Errors found: \n\n" + self.errorMsg + "\n")
+    # def __del__(self):
+    #
+    #     if self.debug_output != "":
+    #         print("(Entries) Debug output: \n\n" + self.debug_output + "\n")
+    #
+    #     if self.error_msg != "":
+    #         print("(Entries) Errors found: \n\n" + self.error_msg + "\n")
 
     def __str__(self):
         tmp = ""
-        for item in self.statistics.iteritems():
+        for item in self.statistics_dict.iteritems():
             tmp += str(item) + "\n"
         return tmp
 
     def return_values_dict(self):
         temp_str = ""
-        for month in self.dictCurrentYear:
-            for period in self.dictCurrentYear[month]:
-                for entry in self.dictCurrentYear[month][period]:
+        for month in self.current_year_dict:
+            for period in self.current_year_dict[month]:
+                for entry in self.current_year_dict[month][period]:
                     temp_str += str(entry)
         return temp_str
 
@@ -143,31 +153,31 @@ class Entries:
 
         # print("Looking for entries for month '" + month + "' and period '" + period + "' :\n")
         entries_found = []
-        for entry in self.currentYear:
+        for entry in self.current_year_list:
             if entry.period == period and entry.month == month:
                 entries_found.append(entry)
         return entries_found
 
     def new_entry(self, newEnt):
         """ Add a new EntryNew object """
-        self.currentYear.append(newEnt)
-        self.currentYear.sort(key=lambda x: x.datelog)
+        self.current_year_list.append(newEnt)
+        self.current_year_list.sort(key=lambda x: x.datelog)
 
-        self.dictCurrentYear[newEnt.month] = {}
-        self.dictCurrentYear[newEnt.month][newEnt.period] = []
-        self.dictCurrentYear[newEnt.month][newEnt.period].append(newEnt)
+        self.current_year_dict[newEnt.month] = {}
+        self.current_year_dict[newEnt.month][newEnt.period] = []
+        self.current_year_dict[newEnt.month][newEnt.period].append(newEnt)
 
     def extract_data_excel_sheets(self):
         """ Load data from excel statement files """
 
-        files = glob.glob(os.path.join(os.environ['OneDrive'], "PythonData", "extrasDeCont", "*xls"))
+        files = glob.glob(os.path.join(os.environ['OneDrive'], "PythonData", "extrasDeCont", "*xls*"))
 
         self.json_config.load_file()
 
         if len(files) == 0:
             raise Exception("No files found in folder \n")
 
-        for filename in sorted(files, key=lambda x: str(re.findall(r'\d{4}\.xls$', x))):
+        for filename in sorted(files, key=lambda x: str(re.findall(r'\d{4}\.xlsx?$', x))):
 
             statement = Statement()
             statement.load_statement(filename)
@@ -191,11 +201,11 @@ class Entries:
                 logging.info("(extractDataXLS ) Sold precendent: '{}'".format(sold_precendent_entry))
             else:
                 logging.warn("(extractDataXLS ) Date format is not what expected! Date found: '{}'".format(
-                    statement.data['headers']['Data generare extras']))
+                    statement.headers['Data generare extras']))
 
             # logging.info ("( extractDataXLS ) For filename '{}', extracted date was '{}.{}.{}'".format(filename, day, month, year ))
 
-            for operation in statement.data['operations']:
+            for operation in statement.operations:
                 (day, month, year) = operation['Data utilizarii cardului'].split("/")
                 op_description = operation['Descrierea tranzactiei'].split("|")[0]
                 if re.match("OPIB", operation['Descrierea tranzactiei']):
@@ -241,11 +251,16 @@ class Entries:
                             EntryNew(day=day, month=month, year=year, description=op_description, value=credit_value,
                                      label=whoTransfered, account=statement.accountName, statement_type=statement.statementType))
                 else:
-                    self.errorMsg += f"Warn: No debit or credit values! \n\t* Row is: {operation}\n\n"
-        print(f"\nDone loading statement data ... Found {len(self.currentYear)} entries!\n\n")
+                    self.error_msg += f"Warn: No debit or credit values! \n\t* Row is: {pprint.pformat(operation)}\n\n"
+        print(f"\nDone loading statement data ... Found {len(self.current_year_list)} entries!\n\n")
 
     def label_me(self, description):
-        """ Selects the correct label from json config file """
+
+        """ Selects the correct label from json config file
+
+        :param description: Operation description that contains service name
+        :return: label name
+        """
 
         master_labels = self.json_config.labels
 
@@ -255,7 +270,7 @@ class Entries:
 
         for masterLabel in master_labels:
             for childLabel in master_labels[masterLabel]:
-                if re.search(r"|".join(master_labels[masterLabel][childLabel]), description.lower()):
+                if re.search(r"|".join(master_labels[masterLabel][childLabel]), description, re.I):
                     return f"{masterLabel}.{childLabel}"
         return "spent.other"
 
@@ -264,17 +279,17 @@ class Entries:
 
         html_output = HTML()
         table = html_output.table()
-        for year in sorted(self.htmlFrame, reverse=True):
+        for year in sorted(self.html_frame, reverse=True):
             print("%s" % (year))
             tr = table.tr
             tr.td(str(year))
-            for month in sorted(self.htmlFrame[year], reverse=True):
+            for month in sorted(self.html_frame[year], reverse=True):
 
                 tr = table.tr
                 tr.td(str(month))
                 tr_per = table.tr
 
-                dict_liq = self.htmlFrame[year][month]['liquidation']
+                dict_liq = self.html_frame[year][month]['liquidation']
                 dict_adv = {'labelSummary': []}
                 if 0:
                     # will not be used anymore
@@ -297,4 +312,4 @@ class Entries:
         """ Writes CSV report """
 
         with open("report.csv", "w") as f:
-            f.write(self.csvValues)
+            f.write(self.csv_values)

@@ -65,8 +65,9 @@ class EntryNew:
             short_p = 'A'
         else:
             short_p = '?'
-        return "{} {} {} {} {} {} {}".format(short_p, self.datelog, self.year, self.month, self.description.ljust(30),
-                                             str(self.value).rjust(15), self.label.ljust(30))
+        return "EntryNew({liquidation}, {datelog}, {year}, {month}, {description:<30}, {value>15}, {label:<30})" \
+               "".format(liquidation=short_p, datelog=self.datelog, year=self.year, month=self.month,
+                         description=self.description, value=self.value, label=self.label)
     
     def __str__(self):
         return ("Values of EntryNew are:\n\n" +

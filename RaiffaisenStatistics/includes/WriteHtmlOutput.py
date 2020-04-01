@@ -1,6 +1,6 @@
-from html import HTML
 from includes.Entries import Entries
 from main.EntryNew import EntryNew
+import xml.dom.minidom
 
 from gpcharts import figure
 from pprint import pprint
@@ -25,7 +25,7 @@ class WriteHtmlOutput:
             entries_for_period = self.splitPeriodsEntries[year]
             statistics = self.statistics(entries_for_period)
             self.overview_statistics(entries_for_period, statistics)
-            # self.writeGPchart(entries_for_period, statistics  )
+            # self.writeGPchart(entries_for_period, statistics_dict  )
             self.write_index_html(entries_for_period)
 
     def load_entries_csv(self, input_file):
@@ -270,25 +270,60 @@ class EntriesCollection:
         return tmp
 
     def process_data(self):
-        head = '''<html>
-                    <head>  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-                    <script src="chart.js"></script>
-                  <link rel="stylesheet" type="text/css" href="main.css" /></head><body>''' # will not be needed
-        tail = '</body></html>'
+        head = """       
+    <!doctype html>
+        <html lang="en">
+            <head>  
+                <!-- Required meta tags -->
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+            
+                <!-- Bootstrap CSS -->
+                <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    
+                <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+                <script src="chart.js"></script>
+                <link rel="stylesheet" type="text/css" href="main.css" />
+            </head>
+            <body>
+        """
+
+        tail = """
+            <!-- Optional JavaScript -->
+            <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+            <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+            <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+            <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+          </body>
+        </html>
+        """
 
         self.htmlData.append(head)
-        self.htmlData.append("<h3>Yearly graphics</h3>")
-        self.htmlData.append("<div id='chart_wrapper'><div id='chart_div'></div></div>")
-        self.htmlData.append("<div id='chart_wrapper'><div id='chart_div2'></div></div>")
-        self.htmlData.append("<div id='chart_wrapper'><div id='chart_div3'></div></div>")
+        no_graphs = True
+
+        if no_graphs:
+            pass
+        else:
+            self.htmlData.append("""
+         <h3>Yearly graphics</h3>       
+         <div id='chart_wrapper'>
+            <div id='chart_div'></div>
+        </div>    
+         <div id='chart_wrapper'>
+            <div id='chart_div2'></div>
+        </div>
+         <div id='chart_wrapper'>
+            <div id='chart_div3'></div>
+        </div>
+            """)
 
         for entry in self.entries:
             # month div
             self.htmlData.append("<div class=\"{}.{}\">".format(entry.header[0], entry.header[1]))
             self.htmlData.append("<h3>Statistics for {}.{} -> Period segment from {} to {} </h3>".format(entry.header[0], entry.header[1], entry.subHeader[0], entry.subHeader[1]))
 
-            # statistics
-            self.htmlData.append("<div class=\"{0}\"><table><th colspan=\"2\">{0}</th>".format("statistics"))
+            # statistics_dict
+            self.htmlData.append("<div class=\"{0}\"><table><th colspan=\"2\">{0}</th>".format("statistics_dict"))
             for row in entry.leftListSummary:
                 self.htmlData.append("<tr><td>{}</td><td>{}</td></tr>".format(row[0], "%.2f" % round(row[1], 2) if row[1] != 0 else ""))
 
@@ -297,7 +332,7 @@ class EntriesCollection:
             # label categories
             self.htmlData.append( "<div class=\"{0}\"><table><th colspan=\"2\">{0}</th>".format("labelCategories" ))
             for row in entry.rightListLabels:
-                self.htmlData.append("<tr><td>{}</td><td>{}</td></tr>".format(row[0], "%.2f" % round(row[1] ,2) if row[1] != 0 else ""))
+                self.htmlData.append("<tr><td>{}</td><td>{}</td></tr>".format(row[0], "%.2f" % round(row[1], 2) if row[1] != 0 else ""))
 
             self.htmlData.append("</table></div>")
 
@@ -392,16 +427,16 @@ class EntriesCollection:
                 width: 1900px;
             }
 
-            .statistics, .labelCategories, .otherLabelDetail, .otherDetail, .billsAndOtherDetail, .foodAndTransportDetail {
+            .statistics_dict, .labelCategories, .otherLabelDetail, .otherDetail, .billsAndOtherDetail, .foodAndTransportDetail {
                 vertical-align:top;
                 margin-top: 50px;
                 display: inline-block;
                 margin-right: 20px
             }
 
-            .statistics  { 	margin-left: 20px;
+            .statistics_dict  { 	margin-left: 20px;
             }
-            .statistics td:nth-child(2), .labelCategories  td:nth-child(2) {
+            .statistics_dict td:nth-child(2), .labelCategories  td:nth-child(2) {
                 text-align: right;
                 padding-right: 0px;
             }

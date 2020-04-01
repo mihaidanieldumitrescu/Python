@@ -8,7 +8,7 @@ connection = pymysql.connect(host=HOSTNAME, user=USERNAME, password=PASSWORD, db
                              cursorclass=pymysql.cursors.DictCursor)
 
 
-class GenerateSQLfile:
+class GenerateSQLFile:
 
     def __init__(self):
         self.entries = []
@@ -20,20 +20,31 @@ class GenerateSQLfile:
         if isinstance(entry, EntryNew):
             self.entries.append(entry)
         else:
-            raise TypeError('Only EntryNew objects are supported for this method')
+            raise TypeError('Only EntryNew() objects are supported for this method')
 
     def export_contents(self):
         print("Exporting data to mySQL database ...")
         global connection
 
+        commit = True
         with connection.cursor() as cursor:
+            print("Warning! ExtrasDeCont table will be truncated!")
+            input("Press enter to continue!")
+            cursor.execute("TRUNCATE TABLE ExtrasDeCont")
+            print("Done! Atempting to write entries to the database ...")
             for entry in self.entries:
                 # Create a new record
+
                 sql = "INSERT INTO `ExtrasDeCont` (`SpreadsheetType`, `Account`, " \
                       "`Label`, `Name`, `Date`, `Value`) VALUES (%s, %s, %s, %s, %s, %s)"
                 cursor.execute(sql, (entry.statementType, entry.account, entry.label, entry.description, entry.datelog.isoformat(), entry.value))
-        print("commit is off!")
-        # connection.commit()
+        if commit:
+            connection.commit()
+            print("Changes commited!")
+        else:
+            print("No changes were made to the database!")
+
+        print("Done!\n")
 
 
 

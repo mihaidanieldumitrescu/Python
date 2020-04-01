@@ -1,8 +1,9 @@
 import re
 import pprint
 import logging
+import os
 
-from mySQL_interface.GenerateSQLfile import GenerateSQLfile
+from mySQL_interface.GenerateSQLFile import GenerateSQLFile
 from includes.Entries import Entries
 from includes.WriteHtmlOutput import EntriesCollection
 from datetime import date
@@ -16,12 +17,12 @@ class PrintEntries:
         # values should be passed as an array
         # e.g. [ ['spent', 1000 ], [ 'food', 700 ] ]
 
-        self.header = None # YEAR-MONTH
+        self.header = None  # YEAR-MONTH
         self.subHeader = None
-        self.leftListSummary = [] # [( bills, 700 ),( food, 1000 ) ]
-        self.rightListLabels = [] # (spent;cash ATM, 100 )
-        self.rightOtherODescription = [] #(HERVIG, 380 )
-        self.monthEntryData = [] # (date , label, description, value )
+        self.leftListSummary = []  # [( bills, 700 ),( food, 1000 ) ]
+        self.rightListLabels = []  # (spent;cash ATM, 100 )
+        self.rightOtherODescription = []  # (HERVIG, 380 )
+        self.monthEntryData = []  # (date , label, description, value )
 
     def __repr__(self):
         string = "PrintEntries element for '{}'".format(self.header)
@@ -71,21 +72,20 @@ class PrintEntries:
 
 class Operations:
 
-    def __init__(self, verbosity="none"):
-        self.entries = Entries('')
+    def __init__(self, statement_input_dir, verbosity="none"):
+        self.entries = Entries(statement_input_dir)
         # self.entries.loadDebugValues()
         self.errorString = ""
         self.totalSpentMonth = {}
         self.verbosity = verbosity
         self.htmlFrame = {}
-        self.sql_file = GenerateSQLfile()
+        self.sql_file = GenerateSQLFile()
 
-        logging.basicConfig(filename='logfile_operations.log',filemode='w', level=logging.DEBUG)
+        logging.basicConfig(filename='logfile_operations.log', filemode='w', level=logging.DEBUG)
         if 0:
             self.entries.printStatistics()
             self.entries.write_html_report()
             self.entries.write_csv_data()
-        self.parse_entries()
 
     def parse_entries(self):
 
@@ -193,7 +193,7 @@ class Operations:
                                 print_entries.rightListLabels.append(["---", 0])
 
                             print_entries.leftListSummary.append([switch_label, total_current_label])
-                            # do not add input from rulaj in month statistics
+                            # do not add input from rulaj in month statistics_dict
 
                             if not re.match ("_", last_label):
                                 sum_of_all_labels += total_current_label
@@ -243,8 +243,13 @@ class Operations:
 
                 for label in sorted(sum_of_all_labels_by_label):
                     pass
-                    # self.csvValues += "{};{};{};{}\n".format(curr_year,curr_month,label, sum_of_all_labels_by_label[label] )
+                    # self.csv_values += "{};{};{};{}\n".format(curr_year,curr_month,label, sum_of_all_labels_by_label[label] )
 
         self.sql_file.export_contents()
         generate_report_html.process_data()
         generate_report_html.write_html_report()
+
+
+if __name__ == "__main__":
+    o = Operations(os.path.join(os.environ['OneDrive'], "PythonData", "extrasDeCont"))
+    o.parse_entries()

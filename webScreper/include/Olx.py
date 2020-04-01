@@ -1,5 +1,7 @@
 from bs4 import BeautifulSoup
 from codecs import open
+from include.globals import *
+
 import pprint
 import requests
 import json
@@ -31,7 +33,9 @@ bootstap_footer = '''\
 
 
 class OlxProduct:
+
     def __init__(self, link="https://www.olx.ro/oferta/masina-renault-megane-IDbEIBo.html"):
+        self.isDeactivated = False
         self.title = ""
         self.link = link.split("#")[0] if len(link.split("#")) else link
         self.price = 0
@@ -67,29 +71,30 @@ class OlxProduct:
             content = requests.get(self.link, data=headers).text
             soup = BeautifulSoup(content, "lxml")
 
+            try:
+                self.description = soup.find("div", {"id": "textContent"}).text.strip()
+            except AttributeError as e:
+                self.isDeactivated = True
+                self.description = "No description available for this page! Page is deactivated"
+                print(f"{e} -> Page is deactivated!")
+
             # self.title
             if soup.find("div", {"class": "offer-titlebox"}):
                 self.title = soup.find("div", {"class": "offer-titlebox"}).h1.text.strip()
             else:
-                self.title = "n/a"
+                self.title = None
             # self.price
             if soup.find("div", {"class": "price-label"}):
                 self.price = soup.find("div", {"class": "price-label"}).strong.text
             elif soup.find("div", {"class": "pricelabel"}):
                 self.price = soup.find("div", {"class": "pricelabel"}).strong.text
             else:
-                self.price = "n/a"
+                self.price = None
 
             if soup.find('div', {'class': "offer-titlebox__details"}):
                 self.location = soup.find('div', {'class': "offer-titlebox__details"}).a.strong.text
             else:
-                self.location = "n/a"
-
-            try:
-                self.description = soup.find("div", {"id": "textContent"}).text.strip()
-            except AttributeError as e:
-                self.description = "No description available for this page! Page is deactivated"
-                print(f"{e} -> Page is deactivated!")
+                self.location = None
 
             # self.images
             for div in soup.findAll("div", {"class": "photo-glow"}):
@@ -108,15 +113,16 @@ class OlxProduct:
             if soup.find("div", {"id": "offerbottombar"}):
                 self.pageCounter = soup.find("div", {"id": "offerbottombar"}).strong.text
             else:
-                self.pageCounter = "n/a"
-
+                self.pageCounter = None
         else:
             print("(OlxProduct) Error: Not an olx link!\n")
 
     def to_htmldiv(self):
         global link_index
 
-        if re.search(r'https?://www.olx.ro/oferta', self.link):
+        if self.isDeactivated:
+            return ""
+        elif re.search(r'https?://www.olx.ro/oferta', self.link):
             div = [u"<div class='row'>\n"
                    u"<div class='col col-lg'>"]
             title = u"<h3>" \
@@ -129,7 +135,7 @@ class OlxProduct:
                 print(f"{e}: \n")
                 print(f"\t-> Link: {self.link}")
                 print("\n\n")
-                price_to_int = '-999'
+                price_to_int = -999
 
             # paragraph e singurul care foloseste metoda text in loc de string "Adus\xc4\x83 din Germania" -> "Adus\u0103 din Germania"
 
@@ -146,7 +152,9 @@ class OlxProduct:
   </div>
 </div></p>
 '''
-            in_local_currency = f"<p>Conversie: {locale.currency(price_to_int * 4.75, grouping = True)} - Locatie: {self.location}</p>"
+
+            to_lei = price_to_int * 4.75
+            in_local_currency = f"<p>Conversie: {locale.currency(to_lei, grouping = True)} - Locatie: {self.location}</p>"
             details = u"<p>An de fabricatie: {} - Rulaj: {} - Capacitate: {}</p>".format(self.details.get('An de fabricatie', "n/a"),
                                                                                                        self.details.get('Rulaj', "n/a"),
                                                                                                        self.details.get('Capacitate motor', "n/a"))
@@ -195,12 +203,12 @@ class Olx(object):
             print(f"{product[0].ljust(20)} {str(product[1]).rjust(5)}")
 
     def load_products(self):
-
+        global url_olx_cars
         # sortByDesc = "?search%5Border%5D=filter_float_price%3Adesc"
         # url = sortByDesc
         fail = 0
         pages = 0
-        url = "https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/?search%5Bfilter_float_price%3Afrom%5D=1000&search%5Bfilter_float_price%3Ato%5D=7000"
+        url = "https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/bucuresti-ilfov-judet/?search%5Bfilter_float_price%3Afrom%5D=1800&search%5Bfilter_float_price%3Ato%5D=5000&search%5Bfilter_float_year%3Afrom%5D=2006&search%5Bfilter_float_rulaj_pana%3Ato%5D=130000"
         # url = "https://www.olx.ro/oferte/q-asus-transformer/"
         while url != "":
 
@@ -229,10 +237,12 @@ class Olx(object):
                     print("Skipping autovit link {} \n".format(product_link))
                     continue
 
-                if len(priceArr):
-                    product_price = int(float(priceArr[0].strong.string.replace(" ", "")[:-1]))
-                else:
+                try:
+                    raw_price = priceArr[0].strong.string
+                    product_price = int(float(raw_price.replace(",", ".").replace(" ", "")[:-1]))
+                except ValueError as e:
                     product_price = -1
+                    print(f"\tError: {e}:\n\t-> Link '{link}' Price: '{priceArr[0]}'\n\n")
 
                 self.products.append([product_title, product_price, product_link])
                 self.products = sorted(self.products, key=lambda x: x[1])
@@ -276,8 +286,10 @@ class Olx(object):
 class OlxCars(Olx):
 
     def __init__(self):
+
+        # this is only a debug link
         searchlink = "https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/?search%5Bfilter_float_price%3Afrom%5D=600&search%5Bfilter_float_price%3Ato%5D=1400"
-        Olx.__init__(self, searchlink, 50)
+        Olx.__init__(self, searchlink, 30)
         self.statistics = {"otherCars": {"prices": [], "occurences": 0}}
         self.productDetailsArr = []
         self.load_products()
