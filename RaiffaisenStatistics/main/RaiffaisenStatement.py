@@ -118,7 +118,18 @@ class Statement(object):
 			elif rx >= 18:
 
 				# This is where operations are listed
-				# 		19 Data inregistrare	Data tranzactiei	Suma debit	Suma credit	Nr. OP	Cod fiscal beneficiar	Ordonator final	Beneficiar final	"Nume/Denumire  ordonator/beneficiar"	"Denumire Banca ordonator/ beneficiar"	"Nr. cont in/din care se  efectueaza tranzactiile"	Descrierea tranzactiei
+				# 		19 Data inregistrare
+				# 		Data tranzactiei
+				# 		Suma debit
+				# 		Suma credit
+				# 		Nr. OP
+				# 		Cod fiscal beneficiar
+				# 		Ordonator final
+				# 		Beneficiar final
+				# 		Nume/Denumire  ordonator/beneficiar"
+				# 		"Denumire Banca ordonator/ beneficiar"
+				# 		"Nr. cont in/din care se  efectueaza tranzactiile"
+				# 		Descrierea tranzactiei
 
 				if len(curr_row[1].value.split('/')) == 3:
 					card_cf = ""
@@ -164,7 +175,11 @@ class Statement(object):
 		print(f"\t ->{self.accountName}, {statement_date}, {self.statementType}\n")
 
 	def sold_precendent(self):
-		sold = float(self.rulaj['Sold initial'])
+		sold = 0
+		try:
+			sold = float(self.rulaj['Sold initial'])
+		except ValueError as e:
+			print(f"Error: {e} for data {self.rulaj['Sold initial']}")
 		if 'Valoare plafon descoperit de cont' in self.rulaj:
 			sold += float(self.rulaj['Valoare plafon descoperit de cont'])
 

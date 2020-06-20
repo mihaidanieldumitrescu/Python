@@ -1,4 +1,3 @@
-from html import HTML
 from main.EntryNew import EntryNew as EntryNew
 
 from main.RaiffaisenStatement import Statement
@@ -24,9 +23,6 @@ class Entries:
         self.manual_entries = []
         self.csv_values = ""
 
-        self.data_verification = []
-
-        self.html_output = HTML()
         self.html_frame = {}
         self.verbosity = "none"
         self.error_msg = ""
@@ -34,10 +30,6 @@ class Entries:
         self.json_config = JsonConfig()
 
         logging.basicConfig(filename='logfile.log', filemode='w', level=logging.DEBUG)
-
-        # used mainly for manually extracted csv files
-
-        self.extract_data_excel_sheets()
 
     def get_labels(self):
         labels = {}
@@ -107,8 +99,7 @@ class Entries:
 
     def __next__(self):
 
-        # this will iterate for each month
-
+        #  this will iterate for each month
         if self.index > 0:
 
             begining_period_date = self.paymentLiquidationDatesArr[self.index - 1]
@@ -126,14 +117,6 @@ class Entries:
             print("Iteration reached it's end. Last begin value is {}".format(
                 self.paymentLiquidationDatesArr[self.index + 1]))
             raise StopIteration
-
-    # def __del__(self):
-    #
-    #     if self.debug_output != "":
-    #         print("(Entries) Debug output: \n\n" + self.debug_output + "\n")
-    #
-    #     if self.error_msg != "":
-    #         print("(Entries) Errors found: \n\n" + self.error_msg + "\n")
 
     def __str__(self):
         tmp = ""
@@ -227,29 +210,54 @@ class Entries:
 
                 if debit_value:
                     self.new_entry(
-                        EntryNew(day=day, month=month, year=year, description=op_description, value=-debit_value,
-                                 label=label_str, account=statement.accountName, statement_type=statement.statementType))
+                        EntryNew(day=day,
+                                 month=month,
+                                 year=year,
+                                 description=op_description,
+                                 value=-debit_value,
+                                 label=label_str,
+                                 account=statement.accountName,
+                                 statement_type=statement.statementType))
                 elif credit_value:
                     # print("credit: %s : %s \n" %(op_description, credit_value ))
 
                     if re.search(self.json_config.salaryIdentifier, operation['Nume/Denumire ordonator/beneficiar'],
                                  re.IGNORECASE):
                         if 1 <= int(day) <= 15:
-                            self.new_entry(EntryNew(day=day, month=month, year=year, description=op_description,
-                                                    value=credit_value, label="_salary",
-                                                    account=statement.accountName, statement_type=statement.statementType))
+                            self.new_entry(EntryNew(day=day,
+                                                    month=month,
+                                                    year=year,
+                                                    description=op_description,
+                                                    value=credit_value,
+                                                    label="_salary",
+                                                    account=statement.accountName,
+                                                    statement_type=statement.statementType))
                         else:
                             self.new_entry(
-                                EntryNew(day=day, month=month, year=year, period='advance', description=op_description,
-                                         value=credit_value, label="_salary",
-                                         account=statement.accountName, statement_type=statement.statementType))
+                                EntryNew(day=day,
+                                         month=month,
+                                         year=year,
+                                         period='advance',
+                                         description=op_description,
+                                         value=credit_value,
+                                         label="_salary",
+                                         account=statement.accountName,
+                                         statement_type=statement.statementType))
                     else:
-                        whoTransfered = "_transferredInto"
-                        if re.search("dumitrescu mihail", op_description.lower()):
-                            whoTransfered = "_transferredTata"
-                        self.new_entry(
-                            EntryNew(day=day, month=month, year=year, description=op_description, value=credit_value,
-                                     label=whoTransfered, account=statement.accountName, statement_type=statement.statementType))
+                        transfer_label = "_transferredInto"
+
+                        # Changing the label to _transferredTata would filter out these entries
+                        # if re.search("dumitrescu mihail", op_description, re.I):
+                        #     transfer_label = "_transferredTata"
+
+                        self.new_entry(EntryNew(day=day,
+                                                month=month,
+                                                year=year,
+                                                description=op_description,
+                                                value=credit_value,
+                                                label=transfer_label,
+                                                account=statement.accountName,
+                                                statement_type=statement.statementType))
                 else:
                     self.error_msg += f"Warn: No debit or credit values! \n\t* Row is: {pprint.pformat(operation)}\n\n"
         print(f"\nDone loading statement data ... Found {len(self.current_year_list)} entries!\n\n")
@@ -273,40 +281,6 @@ class Entries:
                 if re.search(r"|".join(master_labels[masterLabel][childLabel]), description, re.I):
                     return f"{masterLabel}.{childLabel}"
         return "spent.other"
-
-    def write_html_report(self):
-        """ Writes html report from entries """
-
-        html_output = HTML()
-        table = html_output.table()
-        for year in sorted(self.html_frame, reverse=True):
-            print("%s" % (year))
-            tr = table.tr
-            tr.td(str(year))
-            for month in sorted(self.html_frame[year], reverse=True):
-
-                tr = table.tr
-                tr.td(str(month))
-                tr_per = table.tr
-
-                dict_liq = self.html_frame[year][month]['liquidation']
-                dict_adv = {'labelSummary': []}
-                if 0:
-                    # will not be used anymore
-                    dict_adv = self.htmlFrame[year][month]['advance']
-
-                for entryLiq, entryAdv in zip(dict_liq['labelSummary'], dict_adv['labelSummary']):  #
-                    tr_nr = table.tr
-                    for key in entryLiq:
-                        tr_nr.td(str(key))
-                        tr_nr.td(str(entryLiq[key]))
-
-                    for key in entryAdv:
-                        tr_nr.td(str(key))
-                        tr_nr.td(str(entryAdv[key]))
-
-        with open("report.html", "w") as f:
-            f.write(str(html_output))
 
     def write_csv_data(self):
         """ Writes CSV report """

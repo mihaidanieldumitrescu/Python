@@ -31,7 +31,7 @@ class GenerateSQLFile:
             print("Warning! ExtrasDeCont table will be truncated!")
             input("Press enter to continue!")
             cursor.execute("TRUNCATE TABLE ExtrasDeCont")
-            print("Done! Atempting to write entries to the database ...")
+            print("Done! Attempting to write entries to the database ...")
             for entry in self.entries:
                 # Create a new record
 
@@ -40,7 +40,7 @@ class GenerateSQLFile:
                 cursor.execute(sql, (entry.statementType, entry.account, entry.label, entry.description, entry.datelog.isoformat(), entry.value))
         if commit:
             connection.commit()
-            print("Changes commited!")
+            print("Changes committed!")
         else:
             print("No changes were made to the database!")
 

@@ -5,8 +5,6 @@ import os
 
 from mySQL_interface.GenerateSQLFile import GenerateSQLFile
 from includes.Entries import Entries
-from includes.WriteHtmlOutput import EntriesCollection
-from datetime import date
 
 
 class PrintEntries:
@@ -26,7 +24,6 @@ class PrintEntries:
 
     def __repr__(self):
         string = "PrintEntries element for '{}'".format(self.header)
-
         return string
 
     def print_to_terminal(self):
@@ -72,8 +69,8 @@ class PrintEntries:
 
 class Operations:
 
-    def __init__(self, statement_input_dir, verbosity="none"):
-        self.entries = Entries(statement_input_dir)
+    def __init__(self, verbosity="none"):
+        self.entries = None
         # self.entries.loadDebugValues()
         self.errorString = ""
         self.totalSpentMonth = {}
@@ -82,16 +79,15 @@ class Operations:
         self.sql_file = GenerateSQLFile()
 
         logging.basicConfig(filename='logfile_operations.log', filemode='w', level=logging.DEBUG)
-        if 0:
-            self.entries.printStatistics()
-            self.entries.write_html_report()
-            self.entries.write_csv_data()
+
+    def load_excel_statements(self, statement_input_dir):
+        self.entries = Entries(statement_input_dir)
+        self.entries.extract_data_excel_sheets()
 
     def parse_entries(self):
 
         # for each month in ascending order
         key_labels = self.entries.get_labels()
-        generate_report_html = EntriesCollection()
 
         for monthly_report in self.entries:
             if not monthly_report:
@@ -195,13 +191,13 @@ class Operations:
                             print_entries.leftListSummary.append([switch_label, total_current_label])
                             # do not add input from rulaj in month statistics_dict
 
-                            if not re.match ("_", last_label):
+                            if not re.match("_", last_label):
                                 sum_of_all_labels += total_current_label
                                 sum_of_all_labels_by_label[last_label] += total_current_label
                             total_current_label = 0
 
                         else:
-                            pass # print("Exception in lastlabel '{}' !".format(last_label ))
+                            pass  # print("Exception in lastlabel '{}' !".format(last_label ))
 
                     # for each label add to month
                     total_current_label += labels_monthly_values_dict[label]
@@ -229,15 +225,12 @@ class Operations:
                 print_entries.leftListSummary.append(["---", 0])
                 print_entries.leftListSummary.append(['_remaining_{}-{}'.format(last_entry_date[-1], curr_month), remaining_value])
                 # print_entries.printTerminal()
-                generate_report_html.add_month_entry(print_entries)
-                generate_report_html.add_chart_row(date(curr_year, int(curr_month), 5), print_entries.leftListSummary)
+
             if 0:
                 print("len values: %s %s \n" % (len(bufferMonth['leftOtherOp']), len(self.rightOtherODescription)))
                 print(pprint.pformat(bufferMonth['leftOtherOp']))
                 print(pprint.pformat(self.rightOtherODescription))
                 print("\n")
-
-
 
             if sum_of_all_labels != 0:
 
@@ -245,11 +238,11 @@ class Operations:
                     pass
                     # self.csv_values += "{};{};{};{}\n".format(curr_year,curr_month,label, sum_of_all_labels_by_label[label] )
 
-        self.sql_file.export_contents()
-        generate_report_html.process_data()
-        generate_report_html.write_html_report()
 
 
 if __name__ == "__main__":
-    o = Operations(os.path.join(os.environ['OneDrive'], "PythonData", "extrasDeCont"))
+    statements_folder = os.path.join(os.environ['OneDrive'], "PythonData", "extrasDeCont")
+    o = Operations()
+    o.load_excel_statements(statements_folder)
     o.parse_entries()
+    o.sql_file.export_contents()
