@@ -32,14 +32,15 @@ class Entries:
         logging.basicConfig(filename='logfile.log', filemode='w', level=logging.DEBUG)
 
     def get_labels(self):
-        labels = {}
+        """ Returns label array
+        :return: Array of unique labels from self.current_year_list
+        """
+        labels = set()
 
         for item in self.current_year_list:
-            labels[item.label] = None
+            labels.add(item.label)
 
-        key_list = labels.keys()
-
-        return key_list
+        return sorted(list(labels))
 
     def return_month_data(self, year, month):
         """ Returns data entries from first day of the month to the last

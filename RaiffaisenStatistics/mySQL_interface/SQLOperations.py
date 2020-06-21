@@ -8,10 +8,10 @@ connection = pymysql.connect(host=HOSTNAME, user=USERNAME, password=PASSWORD, db
                              cursorclass=pymysql.cursors.DictCursor)
 
 
-class GenerateSQLFile:
+class SQLOperations:
 
-    def __init__(self):
-        self.entries = []
+    def __init__(self, entries=[]):
+        self.entries = entries
 
     def __str__(self):
         return "\n".join([str(x) for x in self.entries])
