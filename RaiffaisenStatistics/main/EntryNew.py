@@ -25,26 +25,20 @@ class EntryNew:
         year = int(year)
         day = int(day)
 
-        # print("Debug periodInt '%s' \n"  %(periodInt )        )
-        
-        if period == 'liquidation' or period == 'advance':      
+        if period == 'liquidation' or period == 'advance':
             self.period = period
         else:
-            # shouldn't I try to categorize the period here?
-            
-            # 15 < days < lastDay of Month => advance, only for salary?
-            
-            print("(EntryNew) Error: Period value is invalid: '{}' \n\n".format(period))
+            raise ValueError("(EntryNew) Error: Period value is invalid: '{}' \n\n".format(period))
             
         if re.match("[a-zA-Z]+", str(month)):
             self.month = month
-            raise Exception(" (validateEntries) self.month is not numerical!")
+            raise ValueError(" (validateEntries) self.month is not numerical!")
         elif re.match("[0-9]+", str(month)):
             month = int(month)
             if 0 > month <= 12:
                 self.month = month
         else:
-            raise Exception("Error: Month value is invalid")
+            raise ValueError("Error: Month value is invalid")
         
         if 2000 < year < 2040:
             self.year = year
@@ -55,20 +49,10 @@ class EntryNew:
         self.description = description
         self.value = value
         self.label = label
-        
-    def __repr__(self):
-        if self.period == 'liquidation':
-            short_p = 'L'
-        elif self.period == 'advance':
-            short_p = 'A'
-        else:
-            short_p = '?'
-        return f"EntryNew({short_p}, {self.date_log}, {self.year}, {self.month}, {self.description:<30}, {self.value:>15}, {self.label:<30})"
     
     def __str__(self):
-        return ("\n\n" +
-                "  P: %s \n" +
+        return ("  %s \n" +
                 "  %s-%s-%s \n" +
                 "  Description %s \n" +
-                "  Value:%s \n" +
+                "  Value: %s \n" +
                 "  Label: %s \n\n") % (self.period[0].upper(), self.day, self.month, self.year, self.description, self.value, self.label)

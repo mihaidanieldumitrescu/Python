@@ -39,7 +39,6 @@ class Statement(object):
         self.statementType = None
         self.accountName = None
         self.headers = {}
-        self.operations = []
         self.rulaj = {}
 
         self.sheet = None
@@ -161,26 +160,28 @@ class Statement(object):
             #                                   1 EUR = 4.6404 RON |Data utilizarii cardului 9/09/2018
 
             if "Data utilizarii cardului" in descrierea_tranzactiei:
-                tmp = descrierea_tranzactiei.split("|")[-1]
-                data_utilizarii = tmp.split()[-1]
+                op_description = descrierea_tranzactiei.split("|")[0].title()
+                data_utilizarii = descrierea_tranzactiei.split("|")[-1].split()[-1]
             else:
                 data_utilizarii = data_tranzactiei
+                op_description = f"<small> {nume_sau_denumire_ordonator_beneficiar} - {descrierea_tranzactiei} </small>".title()
 
             (day, month, year) = data_utilizarii.split("/")
-            op_description = descrierea_tranzactiei.split("|")[0]
-            if re.match("OPIB", descrierea_tranzactiei):
-                op_description = descrierea_tranzactiei.split("|")[1]
+
+            # if re.match("OPIB", descrierea_tranzactiei):
+            #     op_description = descrierea_tranzactiei.split("|")[1]
             debit_value = suma_debit
             credit_value = suma_credit
             date_format = "%d/%m/%Y"
             label_str = self.label_me(op_description)
+            period = "liquidation" if 1 <= int(day) <= 15 else "advance"
 
             if debit_value:
                 return EntryNew(day=day,
                                 month=month,
                                 year=year,
                                 date_log=datetime.strptime(data_utilizarii, date_format),
-                                period="liquidation",
+                                period=period,
                                 description=op_description,
                                 value=-debit_value,
                                 suma_debit=debit_value,
@@ -189,14 +190,9 @@ class Statement(object):
                                 statement_type=self.statementType)
             elif credit_value:
 
-                period = "liquidation" if 1 <= int(day) <= 15 else "advance"
                 salary_pattern = self.json_config.salaryIdentifier
-                if re.search(salary_pattern,
-                             nume_sau_denumire_ordonator_beneficiar,
-                             re.IGNORECASE):
-                    label = "_salary"
-                else:
-                    label = "_transferredInto"
+                found_salary_pattern = re.search(salary_pattern, nume_sau_denumire_ordonator_beneficiar, re.I)
+                label = "_salary" if found_salary_pattern else "_transferredInto"
 
                 return EntryNew(day=day,
                                 month=month,
@@ -234,9 +230,14 @@ class Statement(object):
         return "spent.other"
 
     def load_statement(self, filename):
+        """
+        Parse filename statement
+        :param filename: 
+        :return: list
+        """
+
         full_path_to_file = os.path.join(os.environ['OneDrive'], "PythonData", "extrasDeCont", filename)
         assert os.path.isfile(full_path_to_file), f"File not found: '{full_path_to_file}'"
-        print(f"{os.path.basename(filename)}")
         book = xlrd.open_workbook(full_path_to_file)
         self.sheet = book.sheet_by_index(0)
 
@@ -252,7 +253,9 @@ class Statement(object):
                 statement_entries.append(self.get_statement_row(rx))
 
         statement_date = self.headers.get('Perioada') if self.headers.get('Perioada') else self.headers.get('Data generare extras')
-        print(f"\t -> {self.accountName}, {statement_date}, {self.statementType}, entries={len(self.operations)}\n")
+
+        print(f"{os.path.basename(filename)}")
+        print(f"\t -> {self.accountName}, {statement_date}, {self.statementType}, entries={len(statement_entries)}\n")
 
         return statement_entries
 
