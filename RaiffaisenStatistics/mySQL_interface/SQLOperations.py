@@ -23,6 +23,9 @@ class SQLOperations:
             raise TypeError('Only EntryNew() objects are supported for this method')
 
     def export_contents(self):
+        """ Export data to mySQL database ...
+        :return:
+        """
         print("Exporting data to mySQL database ...")
         global connection
 
@@ -35,9 +38,18 @@ class SQLOperations:
             for entry in self.entries:
                 # Create a new record
 
-                sql = "INSERT INTO `ExtrasDeCont` (`SpreadsheetType`, `Account`, " \
-                      "`Label`, `Name`, `Date`, `Value`) VALUES (%s, %s, %s, %s, %s, %s)"
-                cursor.execute(sql, (entry.statementType, entry.account, entry.label, entry.description, entry.datelog.isoformat(), entry.value))
+                sql = "INSERT INTO " \
+                      "     `ExtrasDeCont` " \
+                      "         (`SpreadsheetType`, `Account`, `Label`, `Name`, `Date`, `Value`) " \
+                      "     VALUES " \
+                      "         (%s, %s, %s, %s, %s, %s)"
+                cursor.execute(sql,
+                               (entry.statementType,
+                                entry.account,
+                                entry.label,
+                                entry.description,
+                                entry.date_log.isoformat(),
+                                entry.value))
         if commit:
             connection.commit()
             print("Changes committed!")

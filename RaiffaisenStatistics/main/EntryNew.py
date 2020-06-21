@@ -10,7 +10,7 @@ class EntryNew:
         self.day = day
         self.month = month
         self.year = year
-        self.datelog = datetime.date(2020, 12, 12)
+        self.date_log = datetime.date(2020, 12, 12)
         self.description = description 
         self.value = value
         self.label = label
@@ -42,11 +42,11 @@ class EntryNew:
             if 0 > month <= 12:
                 self.month = month
         else:
-                raise Exception("Error: Month value is invalid")
+            raise Exception("Error: Month value is invalid")
         
         if 2000 < year < 2040:
             self.year = year
-            self.datelog = datetime.date(year, month, day)
+            self.date_log = datetime.date(year, month, day)
         else:
             print(" (EntryNew) Error: Year value is invalid: '{}' \n\n".format(year))
         
@@ -54,10 +54,6 @@ class EntryNew:
         self.value = value
         self.label = label
         
-    def print_entry_values(self):
-        print('{:8} {:4} {:20} {:8} {:8} {:8}'.format(self.period, self.month, self.year, self.description, self.value,
-                                                      self.label))
-
     def __repr__(self):
         if self.period == 'liquidation':
             short_p = 'L'
@@ -65,15 +61,13 @@ class EntryNew:
             short_p = 'A'
         else:
             short_p = '?'
-        return "EntryNew({liquidation}, {datelog}, {year}, {month}, {description:<30}, {value:>15}, {label:<30})" \
-               "".format(liquidation=short_p, datelog=self.datelog, year=self.year, month=self.month,
-                         description=self.description, value=self.value, label=self.label)
+        return f"EntryNew({short_p}, {self.date_log}, {self.year}, {self.month}, {self.description:<30}, {self.value:>15}, {self.label:<30})"
     
     def __str__(self):
         return ("Values of EntryNew are:\n\n" +
                 "  Period: %s \n" +
-                "  Month: %s \n"  +
-                "  Year: %s \n"   +
+                "  Month: %s \n" +
+                "  Year: %s \n" +
                 "  Description %s \n" +
                 "  Value:%s \n" +
                 "  Label: %s \n\n") % (self.period, self.month, self.year, self.description, self.value, self.label)
