@@ -40,16 +40,18 @@ class SQLOperations:
 
                 sql = "INSERT INTO " \
                       "     `ExtrasDeCont` " \
-                      "         (`SpreadsheetType`, `Account`, `Label`, `Name`, `Date`, `Value`) " \
+                      "         (`SpreadsheetType`, `Account`, `Label`, `Name`, `Date`, `Value`, `Suma debit`, `Suma credit`) " \
                       "     VALUES " \
-                      "         (%s, %s, %s, %s, %s, %s)"
+                      "         (%s, %s, %s, %s, %s, %s, %s, %s)"
                 cursor.execute(sql,
                                (entry.statementType,
                                 entry.account,
                                 entry.label,
                                 entry.description,
                                 entry.date_log.isoformat(),
-                                entry.value))
+                                entry.value,
+                                entry.suma_debit,
+                                entry.suma_credit))
         if commit:
             connection.commit()
             print("Changes committed!")
