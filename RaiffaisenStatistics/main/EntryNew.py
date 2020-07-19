@@ -1,16 +1,16 @@
 #!/usr/bin/python
 
 import re
-import datetime
+import datetime as dt
 
 
 class EntryNew:
-    def __init__(self, period='liquidation', year=None, month=None, day=None, date_log=None, description=None, value=None, suma_debit=None, suma_credit=None, label="default", account=None, statement_type=None):
+    def __init__(self, period='liquidation', date_log=None, description=None, value=None, suma_debit=None, suma_credit=None, label="default", account=None, statement_type=None):
         self.period = period
-        self.day = day
-        self.month = month
-        self.year = year
-        self.date_log = datetime.date(2020, 12, 12)
+        self.day = None
+        self.month = None
+        self.year = None
+        self.date_log = date_log
         self.description = description 
         self.value = value
         self.suma_debit = suma_debit
@@ -19,22 +19,19 @@ class EntryNew:
         self.account = account
         self.statementType = statement_type
 
-        self.validate_entries(period, month, year, day, description, value, label)
+        self.validate_entries(period, description, value, label)
 
-    def validate_entries(self, period, month, year, day, description, value, label):
-        year = int(year)
-        day = int(day)
+    def validate_entries(self, period, description, value, label):
+        year = int(self.date_log.year)
+        day = int(self.date_log.day)
 
-        if period == 'liquidation' or period == 'advance':
-            self.period = period
-        else:
-            raise ValueError("(EntryNew) Error: Period value is invalid: '{}' \n\n".format(period))
-            
-        if re.match("[a-zA-Z]+", str(month)):
-            self.month = month
+        self.period = "liquidation" if 1 <= int(self.date_log.day) <= 15 else "advance"
+
+        if re.match("[a-zA-Z]+", str(self.date_log.month)):
+            self.month = self.date_log.month
             raise ValueError(" (validateEntries) self.month is not numerical!")
-        elif re.match("[0-9]+", str(month)):
-            month = int(month)
+        elif re.match("[0-9]+", str(self.date_log.month)):
+            month = int(self.date_log.month)
             if 0 > month <= 12:
                 self.month = month
         else:
@@ -42,7 +39,7 @@ class EntryNew:
         
         if 2000 < year < 2040:
             self.year = year
-            self.date_log = datetime.date(year, month, day)
+            self.date_log = dt.date(year, month, day)
         else:
             print(" (EntryNew) Error: Year value is invalid: '{}' \n\n".format(year))
         
@@ -52,7 +49,7 @@ class EntryNew:
     
     def __str__(self):
         return ("  %s \n" +
-                "  %s-%s-%s \n" +
+                "  %s \n" +
                 "  Description %s \n" +
                 "  Value: %s \n" +
-                "  Label: %s \n\n") % (self.period[0].upper(), self.day, self.month, self.year, self.description, self.value, self.label)
+                "  Label: %s \n\n") % (self.period[0].upper(), self.date_log, self.description, self.value, self.label)

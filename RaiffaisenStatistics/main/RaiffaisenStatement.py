@@ -44,6 +44,10 @@ class Statement(object):
         self.sheet = None
         self.overdraft_flag = False
 
+    @staticmethod
+    def get_cell_column_value(column_number, row):
+        return row[column_number].value
+
     def get_excel_headers(self, rx):
         """ OVERDRAFT STATEMENT SAMPLE
         0  Data generare extras:	xx/xx/xx
@@ -71,32 +75,36 @@ class Statement(object):
         """
         curr_row = self.sheet.row(rx)
 
+        column_a = Statement.get_cell_column_value(0, curr_row)
+        column_b = Statement.get_cell_column_value(1, curr_row)
+
         if rx == 0:
             # Data generare extras: -> Monthly statement
             # Perioada: -> At demand statement
-            if curr_row[0].value == "Perioada:":
+            if column_a == "Perioada:":
                 self.statementType = 'OnDemand'
-                self.headers['Perioada'] = curr_row[1].value
-            elif curr_row[0].value == "Data generare extras:":
+                self.headers['Perioada'] = column_b
+            elif column_a == "Data generare extras:":
                 self.statementType = 'Monthly'
-                self.headers['Data generare extras'] = curr_row[1].value
+                self.headers['Data generare extras'] = column_b
         elif rx == 1:
             # Numar extras:	xx
-            self.headers['Numar extras'] = curr_row[1].value
+            self.headers['Numar extras'] = column_b
         elif rx == 5:
             # Nume client: xx
-            self.headers['Nume client'] = curr_row[1].value
+            self.headers['Nume client'] = column_b
         elif rx == 6:
             # Adresa: xx
-            self.headers['Adresa client'] = curr_row[1].value
-        elif rx == 11:
-            # Cod IBAN:	ROxxRZBR00000x00xxxxxxxx
-            self.headers['Cod IBAN'] = curr_row[1].value
-            acc_name = self.json_config.return_account_name(curr_row[1].value)
-            if acc_name:
-                self.accountName = acc_name
-            else:
-                self.accountName = "Unknown"
+            self.headers['Adresa client'] = column_b
+        elif rx in (11, 12, 13):
+            if 'Cod IBAN:' == column_a:
+                iban_code = column_b
+
+                self.headers['Cod IBAN'] = iban_code
+
+                acc_name = self.json_config.return_account_name(iban_code)
+                self.accountName = acc_name if acc_name else "Unknown"
+
         elif rx == 14:
             # 13 Sold initial	Rulaj debitor	Rulaj creditor	Sold final
             # 14 0				0				0				0
@@ -104,13 +112,31 @@ class Statement(object):
             self.rulaj['Rulaj debitor'] = curr_row[1].value
             self.rulaj['Rulaj creditor'] = curr_row[2].value
             self.rulaj['Sold final'] = curr_row[3].value
-        elif rx == 16:
-            if re.search("Valoare plafon descoperit de cont", curr_row[0].value):
-                overdraft_flag = 1
+        elif rx in (16, 17):
+            if "Valoare plafon descoperit de cont" == Statement.get_cell_column_value(0, curr_row):
+                self.headers['Valoare plafon descoperit de cont'] = Statement.get_cell_column_value(0, self.sheet.row(rx + 1))
+                self.overdraft_flag = True
 
-        elif rx == 17:
-            if self.overdraft_flag:
-                self.rulaj['Valoare plafon descoperit de cont'] = curr_row[0].value
+    def is_account(self, account_number, defined_account):
+        assert defined_account in self.json_config.accountNames, f"Account name '{defined_account}' not found in JSON config file"
+
+        if account_number == self.json_config.accountNames[defined_account]:
+            return True
+        return False
+
+    def is_transfer_between_visa_mastercard(self, source_account_id, destination_account_id):
+        test_list = []
+
+        for account_id in source_account_id, destination_account_id:
+            for account_name in "Visa", "Mastercard":
+                if self.is_account(account_id, account_name):
+                    test_list.append(True)
+
+        return test_list == [True, True]
+
+    @staticmethod
+    def clean_operation_description(description):
+        return " ".join(filter(lambda x: 'OPIB' not in x, description.split('|')))
 
     def get_statement_row(self, rx):
 
@@ -138,21 +164,32 @@ class Statement(object):
          cod_fiscal_beneficiar,
          ordonator_final,
          beneficiar_final,
-         nume_sau_denumire_ordonator_beneficiar,
+         nume_beneficiar,
          den_banca_ordonator,
-         nr_cont,
+         nr_cont_sursa,
          descrierea_tranzactiei) = list(map(lambda x: x.value, curr_row))
 
+        numar_cont_destinatie = self.headers['Cod IBAN']
+        assert numar_cont_destinatie, "IBAN code not found!"
+
         if len(data_tranzactiei.split('/')) == 3:
-            search = re.search("DUMITRESCU", nume_sau_denumire_ordonator_beneficiar)
-            if re.search(r'5244$', nr_cont) and search:
-                descrierea_tranzactiei = "_transfer_credit_ramburs|" + descrierea_tranzactiei
-            elif re.search(r'5113$', nr_cont) and search:
-                descrierea_tranzactiei = "_transfer_mastercard|" + descrierea_tranzactiei
-            elif re.search(r'6184$', nr_cont) and search:
-                descrierea_tranzactiei = "_transfer_visa|" + descrierea_tranzactiei
-            elif re.search(r'9074$', nr_cont) and search:
-                descrierea_tranzactiei = "_transfer_economii|" + descrierea_tranzactiei
+
+            s = None
+            is_adjustment = False
+
+            if self.is_transfer_between_visa_mastercard(nr_cont_sursa, numar_cont_destinatie):
+                is_adjustment = True
+            elif self.is_account(nr_cont_sursa, "Ramburs credit"):
+                s = "cont_credit_ramburs|"
+            elif self.is_account(nr_cont_sursa, "Mastercard"):
+                s = "cont_mastercard|"
+            elif self.is_account(nr_cont_sursa, "Visa"):
+                s = "cont_visa|"
+            elif self.is_account(nr_cont_sursa, "Economii"):
+                s = "cont_economii|"
+
+            if s:
+                descrierea_tranzactiei = s + Statement.clean_operation_description(descrierea_tranzactiei)
 
             # Descrierea tranzactiei
             # ENEL ENERGIE MUNTENIA BUCUREȘTI |Card nr. XXXX XXXX XXXX XXXX |Data utilizarii cardului 2/03/2017
@@ -164,52 +201,31 @@ class Statement(object):
                 data_utilizarii = descrierea_tranzactiei.split("|")[-1].split()[-1]
             else:
                 data_utilizarii = data_tranzactiei
-                op_description = f"<small> {nume_sau_denumire_ordonator_beneficiar} - {descrierea_tranzactiei} </small>".title()
+                directie = "in" if suma_debit else "din"
+                op_description = f"<small> {nume_beneficiar} - {directie}_{descrierea_tranzactiei} </small>".title()
 
-            (day, month, year) = data_utilizarii.split("/")
-
-            # if re.match("OPIB", descrierea_tranzactiei):
-            #     op_description = descrierea_tranzactiei.split("|")[1]
             debit_value = suma_debit
             credit_value = suma_credit
-            date_format = "%d/%m/%Y"
-            label_str = self.label_me(op_description)
-            period = "liquidation" if 1 <= int(day) <= 15 else "advance"
 
-            if debit_value:
-                return EntryNew(day=day,
-                                month=month,
-                                year=year,
-                                date_log=datetime.strptime(data_utilizarii, date_format),
-                                period=period,
-                                description=op_description,
-                                value=-debit_value,
-                                suma_debit=debit_value,
-                                label=label_str,
-                                account=self.accountName,
-                                statement_type=self.statementType)
+            if is_adjustment:
+                label_str = self.label_adjustment(nr_cont_sursa, numar_cont_destinatie)
+            elif debit_value:
+                label_str = self.label_debit(op_description)
             elif credit_value:
+                label_str = self.label_credit(nume_beneficiar)
 
-                salary_pattern = self.json_config.salaryIdentifier
-                found_salary_pattern = re.search(salary_pattern, nume_sau_denumire_ordonator_beneficiar, re.I)
-                label = "_salary" if found_salary_pattern else "_transferredInto"
+            entry = EntryNew(date_log=datetime.strptime(data_utilizarii, "%d/%m/%Y"),
+                             description=op_description,
+                             value=debit_value if debit_value else credit_value,
+                             suma_debit=debit_value,
+                             suma_credit=credit_value,
+                             label=label_str,
+                             account=self.accountName,
+                             statement_type=self.statementType)
 
-                return EntryNew(day=day,
-                                month=month,
-                                year=year,
-                                date_log=datetime.strptime(data_utilizarii, date_format),
-                                period=period,
-                                description=op_description,
-                                value=credit_value,
-                                suma_credit=credit_value,
-                                label=label,
-                                account=self.accountName,
-                                statement_type=self.statementType)
-            else:
-                raise ValueError(
-                    f"Corrupt entry: No debit or credit values! \n\t* {pprint.pformat(curr_row)}\n\n")
+            return entry
 
-    def label_me(self, description):
+    def label_debit(self, description):
 
         """ Selects the correct label from json config file
 
@@ -229,16 +245,34 @@ class Statement(object):
                     return f"{masterLabel}.{childLabel}"
         return "spent.other"
 
-    def load_statement(self, filename):
+    def label_credit(self, nume_beneficiar):
+
+        salary_pattern = self.json_config.salaryIdentifier
+        found_salary_pattern = re.search(salary_pattern, nume_beneficiar, re.I)
+        return "_salary" if found_salary_pattern else "_transferredInto"
+
+    def label_adjustment(self, source_account, destination_account):
+
+        # [{ "Account name": "Account number" }]
+        account_items = self.json_config.accountNames.items()
+        source, destination = "Unknown", "Unknown"
+
+        for item in account_items:
+            if item[1] == source_account:
+                source = item[0]
+            elif item[1] == destination_account:
+                destination = item[0]
+
+        return f"adjustment.{source}To{destination}"
+
+    def load_statement(self, file_path):
         """
         Parse filename statement
-        :param filename: 
+        :param file_path:
         :return: list
         """
 
-        full_path_to_file = os.path.join(os.environ['OneDrive'], "PythonData", "extrasDeCont", filename)
-        assert os.path.isfile(full_path_to_file), f"File not found: '{full_path_to_file}'"
-        book = xlrd.open_workbook(full_path_to_file)
+        book = xlrd.open_workbook(file_path)
         self.sheet = book.sheet_by_index(0)
 
         statement_entries = []
@@ -250,11 +284,13 @@ class Statement(object):
             if rx < 18:
                 self.get_excel_headers(rx)
             elif rx >= 18:
-                statement_entries.append(self.get_statement_row(rx))
+                entry = self.get_statement_row(rx)
+                if entry:
+                    statement_entries.append(entry)
 
         statement_date = self.headers.get('Perioada') if self.headers.get('Perioada') else self.headers.get('Data generare extras')
 
-        print(f"{os.path.basename(filename)}")
+        print(f"{os.path.basename(file_path)}")
         print(f"\t -> {self.accountName}, {statement_date}, {self.statementType}, entries={len(statement_entries)}\n")
 
         return statement_entries

@@ -9,6 +9,8 @@ if __name__ == "__main__":
 
     ent = Entries(statements_folder)
     ent.extract_data_excel_sheets()
+
+    # Remove empty lines
     entries_list = list(filter(None, ent.get_entries()))
 
     sql_op = SQLOperations(entries_list)

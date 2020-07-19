@@ -5,12 +5,11 @@ import glob
 import os
 import re
 
-files = glob.glob(os.path.join(os.environ['OneDrive'], "PythonData", "extrasDeCont", "*xls*"))
-
 
 class Entries:
 
-    def __init__(self, input_file):
+    def __init__(self, folder=os.path.join(os.environ['OneDrive'], "PythonData", "extrasDeCont")):
+        self.files = glob.glob(os.path.join(folder, "*.xls*"))
         self.current_year_list = []
 
     def get_entries(self):
@@ -22,15 +21,15 @@ class Entries:
     def extract_data_excel_sheets(self):
         """ Load data from excel statement files """
 
-        if len(files) == 0:
+        if len(self.files) == 0:
             raise Exception("No files found in folder \n")
 
-        excel_statement_files = sorted(files, key=lambda x: str(re.findall(r'\d{4}\.xlsx?$', x)))
+        excel_statement_files = sorted(self.files, key=lambda x: str(re.findall(r'\d{4}\.xlsx?$', x)))
 
-        for filename in excel_statement_files:
+        for file in excel_statement_files:
 
             statement = Statement()
-            self.current_year_list.extend(statement.load_statement(filename))
+            self.current_year_list.extend(statement.load_statement(file))
 
         print(f"\nDone loading statement data ... Found {len(self.current_year_list)} entries!\n\n")
 
