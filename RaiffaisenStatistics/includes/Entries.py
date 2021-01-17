@@ -10,10 +10,7 @@ class Entries:
 
     def __init__(self, folder=os.path.join(os.environ['OneDrive'], "PythonData", "extrasDeCont")):
         self.files = glob.glob(os.path.join(folder, "*.xls*"))
-        self.current_year_list = []
-
-    def get_entries(self):
-        return self.current_year_list
+        self.statements = []
 
     def __str__(self):
         return "Entries.__str__ Undefined!"
@@ -29,7 +26,7 @@ class Entries:
         for file in excel_statement_files:
 
             statement = Statement()
-            self.current_year_list.extend(statement.load_statement(file))
+            statement.load_statement(file)
+            self.statements.append(statement)
 
-        print(f"\nDone loading statement data ... Found {len(self.current_year_list)} entries!\n\n")
 

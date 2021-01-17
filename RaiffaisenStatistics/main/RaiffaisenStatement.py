@@ -44,6 +44,9 @@ class Statement(object):
         self.sheet = None
         self.overdraft_flag = False
 
+        self.statement_filename = None
+        self.entries = []
+
     @staticmethod
     def get_cell_column_value(column_number, row):
         return row[column_number].value
@@ -265,6 +268,11 @@ class Statement(object):
 
         return f"adjustment.{source}To{destination}"
 
+    def get_identifier_dict(self):
+        return dict(data_generare_extras=self.headers.get('Data generare extras'),
+                    cod_iban=self.headers.get('Cod IBAN'),
+                    tranzactii=len(self.entries))
+
     def load_statement(self, file_path):
         """
         Parse filename statement
@@ -272,10 +280,10 @@ class Statement(object):
         :return: list
         """
 
+        self.statement_filename = os.path.basename(file_path)
+
         book = xlrd.open_workbook(file_path)
         self.sheet = book.sheet_by_index(0)
-
-        statement_entries = []
 
         self.json_config.load_file()
 
@@ -286,14 +294,13 @@ class Statement(object):
             elif rx >= 18:
                 entry = self.get_statement_row(rx)
                 if entry:
-                    statement_entries.append(entry)
+                    self.entries.append(entry)
 
         statement_date = self.headers.get('Perioada') if self.headers.get('Perioada') else self.headers.get('Data generare extras')
 
         print(f"{os.path.basename(file_path)}")
-        print(f"\t -> {self.accountName}, {statement_date}, {self.statementType}, entries={len(statement_entries)}\n")
+        print(f"\t -> {self.accountName}, {statement_date}, {self.statementType}, entries={len(self.entries)}\n")
 
-        return statement_entries
 
 
 if __name__ == "__main__":
