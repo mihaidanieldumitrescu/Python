@@ -1,5 +1,7 @@
 import os
 import json
+from .defined_labels import LABELS
+from .sensitive_information import SENSITIVE_INFO
 
 
 class JsonConfig:
@@ -15,28 +17,23 @@ class JsonConfig:
 
     def load_file(self):
         """ Load file defined in self.path """
-        with open(self.path) as f:
-            contents = json.load(f)
-            try:
-                self.labels = contents['labelDict']
-                self.accountNames = contents['accountNames']
-                self.rentValue = contents['rent']
-                self.salaryIdentifier = contents['salaryAccountName']
-                self.creditCardPayment = contents['creditCardPaymentAccount']
-                self.owedMoneyPaidBack = contents['fatherBTaccount']
-            except Exception as e:
-                print(f"(JsonConfig) Error: {e}")
-                exit()
+
+        self.labels = LABELS['labelDict']
+        self.accountNames = SENSITIVE_INFO['accountNames']
+        self.rentValue = SENSITIVE_INFO['rent']
+        self.salaryIdentifier = SENSITIVE_INFO['salaryAccountName']
+        self.creditCardPayment = SENSITIVE_INFO['creditCardPaymentAccount']
+        self.owedMoneyPaidBack = SENSITIVE_INFO['fatherBTaccount']
 
     def __str__(self):
         return f"\
-    self.path = {self.path} \n\n\
-    self.labels = {self.labels.keys()} \n\
-    self.accountNames = {str(self.accountNames)} \n\
-    self.rentValue = {str(self.rentValue)} \n\
-    self.salaryIdentifier = {str(self.salaryIdentifier)} \n\
-    self.creditCardPayment = {str(self.creditCardPayment)} \n\
-    self.owedMoneyPaidBack = {str(self.owedMoneyPaidBack)}\n\n"
+                self.path = {self.path} \n\n\
+                self.labels = {self.labels.keys()} \n\
+                self.accountNames = {str(self.accountNames)} \n\
+                self.rentValue = {str(self.rentValue)} \n\
+                self.salaryIdentifier = {str(self.salaryIdentifier)} \n\
+                self.creditCardPayment = {str(self.creditCardPayment)} \n\
+                self.owedMoneyPaidBack = {str(self.owedMoneyPaidBack)}\n\n"
 
     def return_account_name(self, iban_code):
         for account_name, iban_json in self.accountNames.items():

@@ -213,7 +213,7 @@ class Statement(object):
             if is_adjustment:
                 label_str = self.label_adjustment(nr_cont_sursa, numar_cont_destinatie)
             elif debit_value:
-                label_str = self.label_debit(op_description)
+                label_str = self.label_debit(op_description, self.json_config.labels)
             elif credit_value:
                 label_str = self.label_credit(nume_beneficiar)
 
@@ -228,15 +228,14 @@ class Statement(object):
 
             return entry
 
-    def label_debit(self, description):
-
+    @staticmethod
+    def label_debit(description, master_labels=[]):
         """ Selects the correct label from json config file
 
+        :param master_labels:
         :param description: Operation description that contains service name
         :return: label name
         """
-
-        master_labels = self.json_config.labels
 
         # {    "leisure" :  {
         #           "film": [ "cinema", "avatar media project" ] }
@@ -244,7 +243,7 @@ class Statement(object):
 
         for masterLabel in master_labels:
             for childLabel in master_labels[masterLabel]:
-                if re.search(r"|".join(master_labels[masterLabel][childLabel]), description, re.I):
+                if re.search(r"\b(" + r"|".join(master_labels[masterLabel][childLabel]) + r")\b", description, re.I):
                     return f"{masterLabel}.{childLabel}"
         return "spent.other"
 
@@ -296,11 +295,13 @@ class Statement(object):
                 if entry:
                     self.entries.append(entry)
 
-        statement_date = self.headers.get('Perioada') if self.headers.get('Perioada') else self.headers.get('Data generare extras')
+        if self.headers.get('Perioada'):
+            statement_date = self.headers.get('Perioada')
+        else:
+            statement_date = self.headers.get('Data generare extras')
 
         print(f"{os.path.basename(file_path)}")
         print(f"\t -> {self.accountName}, {statement_date}, {self.statementType}, entries={len(self.entries)}\n")
-
 
 
 if __name__ == "__main__":

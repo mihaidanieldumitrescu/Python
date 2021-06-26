@@ -11,7 +11,7 @@ TABLE_NAME = 'spreadsheet_entries'
 STATEMENT_SHEETS = 'statement_sheets'
 
 
-class SQLOperations:
+class InsertDatabaseEntries:
 
     def __init__(self, statements=[]):
         self.statements = statements
@@ -37,7 +37,8 @@ class SQLOperations:
             if statement.get(attribute_1) == cmp.get(attribute_1) and \
                statement.get(attribute_2) == cmp.get(attribute_2):
                 assert statement.get(attribute_3) == cmp.get(attribute_3), \
-                       f"Local statement {statement} has a different transaction value than expected: {statement.get(attribute_3)} !=  {cmp.get(attribute_3)}\n"
+                       f"Local statement {statement} has a different transaction value than expected: " \
+                       f"{statement.get(attribute_3)} !=  {cmp.get(attribute_3)}\n"
                 return True
         return False
 
@@ -50,28 +51,34 @@ class SQLOperations:
 
         with connection.cursor() as cursor:
             cursor.execute("SELECT data_generare_extras, cod_iban, tranzactii FROM statement_sheets")
-            results = cursor.fetchall()
+            database_statements = cursor.fetchall()
+
         nothing_exported = True
-        for statement in self.statements:
-            if not self.is_statement_already_inserted(statement.get_identifier_dict(), results):
+        for spreadsheet_statement in self.statements:
+
+            if not self.is_statement_already_inserted(spreadsheet_statement.get_identifier_dict(),
+                                                      database_statements):
                 sql = f"""\
             INSERT INTO {STATEMENT_SHEETS}
                 (data_generare_extras, numar_extras, cod_iban, tranzactii)
                     VALUES
-                        (%s, %s, %s, %i)"""
+                        (%s, %s, %s, %s)"""
 
-                cursor.execute(sql,
-                               statement.get('data_generare_extras'),
-                               statement.get('cod_iban'),
-                               statement.get('tranzactii'))
-                cursor.commit()
+                s_dict = spreadsheet_statement.get_identifier_dict()
+
+                with connection.cursor() as cursor:
+                    cursor.execute(sql,
+                                   (s_dict.get('data_generare_extras'),
+                                    0,  # numar extras
+                                    s_dict.get('cod_iban'),
+                                    s_dict.get('tranzactii')))
 
                 commit = True
                 with connection.cursor() as cursor:
                     nothing_exported = False
-                    print(f"Inserting new data from {statement.get_identifier_dict()}")
+                    print(f"Inserting new data from {spreadsheet_statement.get_identifier_dict()}")
 
-                    for entry in statement.entries:
+                    for entry in spreadsheet_statement.entries:
 
                         sql = f"""\
             INSERT INTO `{TABLE_NAME}`
@@ -87,8 +94,8 @@ class SQLOperations:
                                         "".join(entry.label.split('.')[1:]),
                                         entry.description,
                                         entry.date_log.isoformat(),
-                                        entry.suma_debit,
-                                        entry.suma_credit))
+                                        entry.suma_debit if entry.suma_debit else 0.0,
+                                        entry.suma_credit if entry.suma_credit else 0.0))
                 if commit:
                     connection.commit()
                     print("Changes committed!")

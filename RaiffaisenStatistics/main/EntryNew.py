@@ -52,4 +52,6 @@ class EntryNew:
                 "  %s \n" +
                 "  Description %s \n" +
                 "  Value: %s \n" +
-                "  Label: %s \n\n") % (self.period[0].upper(), self.date_log, self.description, self.value, self.label)
+                "  suma_debit: %s \n" +
+                "  suma_credit: %s \n" +
+                "  Label: %s \n\n") % (self.period[0].upper(), self.date_log, self.description, self.value, self.suma_debit, self.suma_credit, self.label)

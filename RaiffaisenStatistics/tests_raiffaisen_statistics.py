@@ -1,7 +1,7 @@
 import pytest
 
 import pprint as pp
-from includes.Entries import Entries
+from includes.StatementData import StatementData
 from main.RaiffaisenStatement import Statement
 from json_config.JsonConfig import JsonConfig
 
@@ -49,7 +49,7 @@ def test_statement(filename, operations, statement_type, overdraft, iban):
 
 def test_get_entries():
 
-    ent = Entries(r"test_data")
+    ent = StatementData(r"test_data")
     ent.extract_data_excel_sheets()
 
     # Remove empty lines
